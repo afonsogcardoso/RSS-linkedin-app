@@ -3,8 +3,15 @@
   <channel>
     <title>Skills Workflow LinkedIn Posts</title>
     <link>https://www.linkedin.com/company/skills-workflow/</link>
-    <description>Latest public LinkedIn company posts from Skills Workflow, exposed as RSS.</description>
-    <lastBuildDate>Wed, 25 Mar 2026 23:36:18 GMT</lastBuildDate>
+    <description>Latest public LinkedIn company posts, exposed as RSS.</description>
+    <lastBuildDate>Wed, 25 Mar 2026 23:42:37 GMT</lastBuildDate>
+    <item>
+      <title>Lorem Ipsum is simply dummy text of the printing and typesetting industry.</title>
+      <link>https://www.linkedin.com/company/skills-workflow/</link>
+      <description><![CDATA[<p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry&apos;s standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</p><figure data-linkedin-attachment-type="image" data-linkedin-attachment-url="https://media.licdn.com/dms/image/v2/D4E22AQF8LDQ80b2MwQ/feedshare-shrink_800/B4EZ0nWcF9HsAc-/0/1774481687232?e=2147483647&amp;v=beta&amp;t=ps2vXH52BeXVz0VpWUmK8pg_WAx-0BvXPCuZLsqELRQ" data-linkedin-attachment-thumbnail-url="https://media.licdn.com/dms/image/v2/D4E22AQF8LDQ80b2MwQ/feedshare-shrink_800/B4EZ0nWcF9HsAc-/0/1774481687232?e=2147483647&amp;v=beta&amp;t=ps2vXH52BeXVz0VpWUmK8pg_WAx-0BvXPCuZLsqELRQ" data-linkedin-attachment-title="No alternative text description for this image"><img src="https://media.licdn.com/dms/image/v2/D4E22AQF8LDQ80b2MwQ/feedshare-shrink_800/B4EZ0nWcF9HsAc-/0/1774481687232?e=2147483647&amp;v=beta&amp;t=ps2vXH52BeXVz0VpWUmK8pg_WAx-0BvXPCuZLsqELRQ" alt="No alternative text description for this image" /></figure><p><em>LinkedIn did not expose a reliable publication timestamp on the page, so pubDate reflects the first successful scrape time.</em></p>]]></description>
+      <guid isPermaLink="false">urn:linkedin-rss:017c1549d9c9b602d7f8382a38ca46919aa743e6</guid>
+      <pubDate>Wed, 25 Mar 2026 23:42:37 GMT</pubDate>
+    </item>
     <item>
       <title>Skills Workflow LinkedIn Posts update</title>
       <link>https://www.linkedin.com/company/skills-workflow/</link>
