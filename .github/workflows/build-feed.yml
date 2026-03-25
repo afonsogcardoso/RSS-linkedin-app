@@ -78,11 +78,44 @@ jobs:
             echo "No feed changes detected."
             exit 0
           fi
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/feed.json public/feed.xml
-          git commit -m "chore: update LinkedIn RSS feed"
-          git push
+          attempts=0
+          max_attempts=3
+
+          while [ "$attempts" -lt "$max_attempts" ]; do
+            attempts=$((attempts + 1))
+            echo "Publishing attempt ${attempts}/${max_attempts}"
+
+            git add data/feed.json public/feed.xml
+
+            if ! git diff --cached --quiet; then
+              git commit -m "chore: update LinkedIn RSS feed"
+            fi
+
+            git fetch origin "${GITHUB_REF_NAME}"
+
+            if git rebase "origin/${GITHUB_REF_NAME}"; then
+              if git push origin "HEAD:${GITHUB_REF_NAME}"; then
+                exit 0
+              fi
+            else
+              git rebase --abort || true
+            fi
+
+            echo "Remote branch moved during the workflow. Rebuilding from latest origin/${GITHUB_REF_NAME}."
+            git reset --hard "origin/${GITHUB_REF_NAME}"
+            npm run build
+
+            if git diff --quiet -- data/feed.json public/feed.xml; then
+              echo "Latest branch already contains the generated feed changes."
+              exit 0
+            fi
+          done
+
+          echo "Failed to publish feed updates after ${max_attempts} attempts."
+          exit 1
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
