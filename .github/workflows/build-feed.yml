@@ -1,0 +1,94 @@
+name: Build LinkedIn RSS Feed
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/30 * * * *"
+
+concurrency:
+  group: linkedin-rss-feed
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+env:
+  NODE_VERSION: "20"
+  LINKEDIN_COMPANY_URL: ${{ vars.LINKEDIN_COMPANY_URL || secrets.LINKEDIN_COMPANY_URL }}
+  SCRAPE_TIMEOUT_MS: ${{ vars.SCRAPE_TIMEOUT_MS }}
+  SCROLL_COUNT: ${{ vars.SCROLL_COUNT }}
+  SCROLL_DELAY_MS: ${{ vars.SCROLL_DELAY_MS }}
+  PAGE_LOAD_DELAY_MS: ${{ vars.PAGE_LOAD_DELAY_MS }}
+  MAX_ITEMS: ${{ vars.MAX_ITEMS }}
+  RSS_TITLE: ${{ vars.RSS_TITLE }}
+  RSS_DESCRIPTION: ${{ vars.RSS_DESCRIPTION }}
+  HEADLESS: "true"
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate required configuration
+        run: |
+          if [ -z "${LINKEDIN_COMPANY_URL}" ]; then
+            echo "Missing LINKEDIN_COMPANY_URL."
+            echo "Set it in GitHub at Settings > Secrets and variables > Actions."
+            echo "Prefer a repository variable because the URL points to a public page."
+            exit 1
+          fi
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Build RSS feed
+        run: npm run build
+
+      - name: Show generated files
+        run: |
+          ls -lah data public
+          wc -c public/feed.xml
+          node -e "const fs=require('fs');const state=JSON.parse(fs.readFileSync('data/feed.json','utf8'));console.log('items:',state.items.length);console.log('first-guid:',state.items[0]?.guid || 'none');"
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Commit updated feed artifacts
+        run: |
+          if git diff --quiet -- data/feed.json public/feed.xml; then
+            echo "No feed changes detected."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/feed.json public/feed.xml
+          git commit -m "chore: update LinkedIn RSS feed"
+          git push
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

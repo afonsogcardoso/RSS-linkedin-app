@@ -1,0 +1,16 @@
+Novo post no LinkedIn
+
+Tema: {{title}}
+Link: {{link}}
+
+Ação obrigatória:
+- Like
+- Repost
+- Comentário relevante, mínimo 1 a 2 linhas
+
+Sugestão:
+Se fizer sentido, mencionar alguém da agência ou parceiro relacionado com o tema.
+
+Evitar comentários genéricos.
+Prazo:
+Até 2 horas após publicação
