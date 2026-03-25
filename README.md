@@ -234,16 +234,16 @@ Recommended Netlify settings:
 
 - Base directory: leave empty if Netlify is reading the root `netlify.toml`
 - Build command: leave empty if Netlify is reading the root `netlify.toml`
-- Publish directory: leave empty and let the Next.js Netlify plugin manage it
+- Publish directory: leave empty in the dashboard. The repository config sets it to `.next`
 - Node version: `20`
 
 If you prefer configuring the dashboard manually instead of using the root `netlify.toml`, use:
 
 - Base directory: `web`
 - Build command: `npm run build`
-- Publish directory: leave empty
+- Publish directory: `.next`
 
-Do not set the publish directory to `web`, `web/`, `.next`, or `web/web`. With the Next.js Netlify plugin, that will fail because the publish directory cannot be the same as the site base directory.
+Do not set the publish directory to `web`, `web/`, or `web/web`. For this Next.js app, the correct publish directory is `.next`.
 
 Set this environment variable in Netlify:
 
