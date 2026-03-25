@@ -228,20 +228,28 @@ The `/web` folder is a separate Next.js application that only reads the RSS feed
 
 ### Deploy `/web` to Netlify
 
-Deploy only the `/web` folder as a separate site.
+Deploy the `/web` app as a separate site, but prefer using the repository root `netlify.toml` so Netlify reads the build settings from version control instead of relying on dashboard defaults.
 
 Recommended Netlify settings:
 
-- Base directory: `web`
-- Build command: `npm run build`
+- Base directory: leave empty if Netlify is reading the root `netlify.toml`
+- Build command: leave empty if Netlify is reading the root `netlify.toml`
 - Publish directory: leave empty and let the Next.js Netlify plugin manage it
 - Node version: `20`
+
+If you prefer configuring the dashboard manually instead of using the root `netlify.toml`, use:
+
+- Base directory: `web`
+- Build command: `npm run build`
+- Publish directory: leave empty
+
+Do not set the publish directory to `web`, `web/`, `.next`, or `web/web`. With the Next.js Netlify plugin, that will fail because the publish directory cannot be the same as the site base directory.
 
 Set this environment variable in Netlify:
 
 - `RSS_FEED_URL` = the existing GitHub Pages RSS URL served from this repository
 
-The `/web/netlify.toml` file includes the Next.js Netlify plugin configuration.
+The repository root `netlify.toml` includes the Netlify build configuration for the `/web` app.
 
 ### Separation of responsibilities
 
@@ -282,13 +290,13 @@ The `/web/netlify.toml` file includes the Next.js Netlify plugin configuration.
 .
 ├── .github/workflows/build-feed.yml
 ├── data/feed.json
+├── netlify.toml
 ├── public/feed.xml
 ├── web/
 │   ├── .env.example
 │   ├── app/
 │   ├── components/
 │   ├── lib/
-│   ├── netlify.toml
 │   ├── package.json
 │   ├── tailwind.config.ts
 │   └── tsconfig.json
