@@ -15,6 +15,7 @@ permissions:
   id-token: write
 
 env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
   NODE_VERSION: "20"
   LINKEDIN_COMPANY_URL: ${{ vars.LINKEDIN_COMPANY_URL || secrets.LINKEDIN_COMPANY_URL }}
   SCRAPE_TIMEOUT_MS: ${{ vars.SCRAPE_TIMEOUT_MS }}
@@ -35,7 +36,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -49,7 +50,7 @@ jobs:
           fi
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -118,7 +119,7 @@ jobs:
           exit 1
 
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
           path: public
 

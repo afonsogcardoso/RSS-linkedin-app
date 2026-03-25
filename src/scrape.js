@@ -95,6 +95,9 @@ async function extractRawPosts(page, config) {
   return page.evaluate(({ candidateLimit }) => {
     const MAX_TEXT_LENGTH = 4000;
     const POST_URL_PATTERN = /linkedin\.com\/.*(\/posts\/|\/feed\/update\/urn:li:activity:)/i;
+    const DOCUMENT_URL_PATTERN = /\.(pdf|pptx?|docx?|xlsx?)(?:$|[?#])/i;
+    const DOCUMENT_HINT_PATTERN =
+      /\b(pdf|document|deck|slides|presentation|whitepaper|brochure|guide|one-pager|ebook|case study)\b/i;
     const selectorCandidates = [
       "div[data-id^='urn:li:activity:']",
       "div[data-urn^='urn:li:activity:']",
@@ -133,7 +136,7 @@ async function extractRawPosts(page, config) {
       return POST_URL_PATTERN.test(String(value || ""));
     }
 
-    function cleanUrl(value) {
+    function cleanUrl(value, options = {}) {
       if (!value) {
         return null;
       }
@@ -142,7 +145,7 @@ async function extractRawPosts(page, config) {
         const parsed = new URL(value, window.location.origin);
         parsed.hash = "";
 
-        if (/linkedin\.com$/i.test(parsed.hostname)) {
+        if (!options.preserveSearch && /linkedin\.com$/i.test(parsed.hostname)) {
           parsed.search = "";
         }
 
@@ -269,7 +272,9 @@ async function extractRawPosts(page, config) {
     function extractImageUrl(container) {
       const candidates = Array.from(container.querySelectorAll("img"))
         .map((image) => {
-          const src = cleanUrl(image.currentSrc || image.getAttribute("src"));
+          const src = cleanUrl(image.currentSrc || image.getAttribute("src"), {
+            preserveSearch: true
+          });
           const alt = normalizeWhitespace(image.getAttribute("alt") || "");
           const width = image.naturalWidth || image.width || 0;
           const height = image.naturalHeight || image.height || 0;
@@ -287,6 +292,187 @@ async function extractRawPosts(page, config) {
         .sort((left, right) => right.score - left.score);
 
       return candidates[0] ? candidates[0].src : null;
+    }
+
+    function pickAttachmentTitle(values, fallback = null) {
+      for (const value of values) {
+        const normalized = normalizeWhitespace(value || "");
+
+        if (!normalized) {
+          continue;
+        }
+
+        const firstLine = normalized.split("\n").map((line) => normalizeWhitespace(line)).find(Boolean);
+
+        if (!firstLine || isMetadataLine(firstLine)) {
+          continue;
+        }
+
+        return firstLine.slice(0, 180);
+      }
+
+      return fallback;
+    }
+
+    function collectImageAttachments(container) {
+      return Array.from(container.querySelectorAll("img"))
+        .map((image) => {
+          const url = cleanUrl(image.currentSrc || image.getAttribute("src"), {
+            preserveSearch: true
+          });
+          const alt = normalizeWhitespace(image.getAttribute("alt") || "");
+          const width = image.naturalWidth || image.width || 0;
+          const height = image.naturalHeight || image.height || 0;
+          const score = width * height;
+
+          return {
+            type: "image",
+            url,
+            thumbnailUrl: url,
+            title: pickAttachmentTitle([alt], "LinkedIn post image"),
+            score
+          };
+        })
+        .filter(({ url, title }) => {
+          if (!url || url.startsWith("data:")) {
+            return false;
+          }
+
+          return !/avatar|profile|logo|ghost|emoji|icon/i.test(`${url} ${title || ""}`);
+        })
+        .sort((left, right) => right.score - left.score);
+    }
+
+    function collectVideoAttachments(container, postUrl) {
+      return Array.from(container.querySelectorAll("video"))
+        .map((video) => {
+          const sourceNode = video.querySelector("source[src]");
+          const videoUrl = cleanUrl(
+            video.currentSrc ||
+              video.getAttribute("src") ||
+              sourceNode?.getAttribute("src"),
+            { preserveSearch: true }
+          );
+          const thumbnailUrl = cleanUrl(video.getAttribute("poster"), {
+            preserveSearch: true
+          });
+          const nearestAnchor = video.closest("a[href]");
+          const anchorUrl = cleanUrl(nearestAnchor?.getAttribute("href") || nearestAnchor?.href, {
+            preserveSearch: true
+          });
+          const url =
+            videoUrl ||
+            (anchorUrl && !looksLikePostUrl(anchorUrl) ? anchorUrl : null) ||
+            postUrl ||
+            null;
+          const score =
+            (video.videoWidth || video.clientWidth || video.offsetWidth || 0) *
+            (video.videoHeight || video.clientHeight || video.offsetHeight || 0);
+
+          if (!url && !thumbnailUrl) {
+            return null;
+          }
+
+          return {
+            type: "video",
+            url,
+            thumbnailUrl,
+            title: pickAttachmentTitle(
+              [
+                video.getAttribute("aria-label"),
+                video.getAttribute("title"),
+                nearestAnchor?.getAttribute("aria-label"),
+                nearestAnchor?.getAttribute("title"),
+                nearestAnchor?.textContent
+              ],
+              "LinkedIn video attachment"
+            ),
+            score
+          };
+        })
+        .filter(Boolean);
+    }
+
+    function collectDocumentAttachments(container) {
+      return Array.from(container.querySelectorAll("a[href]"))
+        .map((link) => {
+          const url = cleanUrl(link.getAttribute("href") || link.href, {
+            preserveSearch: true
+          });
+
+          if (!url || looksLikePostUrl(url)) {
+            return null;
+          }
+
+          const title = pickAttachmentTitle(
+            [
+              link.getAttribute("aria-label"),
+              link.getAttribute("title"),
+              link.textContent
+            ],
+            null
+          );
+          const combined = `${url} ${title || ""}`;
+
+          if (
+            !DOCUMENT_URL_PATTERN.test(url) &&
+            !/linkedin\.com\/.*document/i.test(url) &&
+            !DOCUMENT_HINT_PATTERN.test(combined)
+          ) {
+            return null;
+          }
+
+          return {
+            type: "document",
+            url,
+            thumbnailUrl: null,
+            title: title || "LinkedIn document attachment",
+            score: 0
+          };
+        })
+        .filter(Boolean);
+    }
+
+    function dedupeAttachments(attachments) {
+      const attachmentMap = new Map();
+
+      for (const attachment of attachments) {
+        if (!attachment || (!attachment.url && !attachment.thumbnailUrl)) {
+          continue;
+        }
+
+        const key = [
+          attachment.type,
+          attachment.url || "",
+          attachment.thumbnailUrl || ""
+        ].join("|");
+        const existing = attachmentMap.get(key);
+
+        if (!existing || (attachment.score || 0) > (existing.score || 0)) {
+          attachmentMap.set(key, attachment);
+        }
+      }
+
+      return Array.from(attachmentMap.values())
+        .sort((left, right) => (right.score || 0) - (left.score || 0))
+        .map(({ score, ...attachment }) => attachment);
+    }
+
+    function extractAttachments(container, postUrl) {
+      const videoAttachments = collectVideoAttachments(container, postUrl);
+      const videoThumbnailUrls = new Set(
+        videoAttachments.map((attachment) => attachment.thumbnailUrl).filter(Boolean)
+      );
+      const imageAttachments = collectImageAttachments(container).filter(
+        (attachment) => !videoThumbnailUrls.has(attachment.url)
+      );
+      const documentAttachments = collectDocumentAttachments(container);
+
+      return dedupeAttachments([
+        ...imageAttachments,
+        ...videoAttachments,
+        ...documentAttachments
+      ]);
     }
 
     const containerSet = new Set();
@@ -316,12 +502,19 @@ async function extractRawPosts(page, config) {
       })
       .slice(0, candidateLimit);
 
-    return orderedContainers.map((container) => ({
-      text: extractText(container),
-      postUrl: extractPostUrl(container),
-      publishedAt: extractTimestamp(container),
-      imageUrl: extractImageUrl(container)
-    }));
+    return orderedContainers.map((container) => {
+      const postUrl = extractPostUrl(container);
+      const attachments = extractAttachments(container, postUrl);
+      const firstImageAttachment = attachments.find((attachment) => attachment.type === "image");
+
+      return {
+        text: extractText(container),
+        postUrl,
+        publishedAt: extractTimestamp(container),
+        imageUrl: firstImageAttachment?.url || extractImageUrl(container),
+        attachments
+      };
+    });
   }, { candidateLimit: config.scrapeCandidateLimit });
 }
 
@@ -353,7 +546,13 @@ async function scrapeLinkedInPosts(config) {
     await autoScroll(page, config);
 
     const rawPosts = await extractRawPosts(page, config);
-    const filteredPosts = rawPosts.filter((post) => post.text || post.postUrl || post.imageUrl);
+    const filteredPosts = rawPosts.filter(
+      (post) =>
+        post.text ||
+        post.postUrl ||
+        post.imageUrl ||
+        (Array.isArray(post.attachments) && post.attachments.length > 0)
+    );
 
     console.log(`[scrape] Extracted ${filteredPosts.length} candidate posts after filtering.`);
 

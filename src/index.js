@@ -16,10 +16,31 @@ const { scrapeLinkedInPosts } = require("./scrape");
 function buildNormalizedItem(rawItem, config, scrapedAt, sortRank) {
   const text = normalizeText(rawItem.text);
   const postUrl = normalizeUrl(rawItem.postUrl);
-  const imageUrl = normalizeUrl(rawItem.imageUrl);
+  const attachments = Array.isArray(rawItem.attachments)
+    ? rawItem.attachments
+        .map((attachment) => {
+          if (!attachment || typeof attachment.type !== "string") {
+            return null;
+          }
+
+          return {
+            type: attachment.type,
+            url: normalizeUrl(attachment.url, { preserveSearch: true }),
+            thumbnailUrl: normalizeUrl(attachment.thumbnailUrl, { preserveSearch: true }),
+            title: normalizeText(attachment.title)
+          };
+        })
+        .filter((attachment) => attachment && (attachment.url || attachment.thumbnailUrl))
+    : [];
+  const imageAttachment = attachments.find((attachment) => attachment.type === "image");
+  const imageUrl =
+    normalizeUrl(rawItem.imageUrl, { preserveSearch: true }) ||
+    imageAttachment?.thumbnailUrl ||
+    imageAttachment?.url ||
+    null;
   const exactPublishedAt = normalizeDate(rawItem.publishedAt);
 
-  if (!text && !postUrl && !imageUrl) {
+  if (!text && !postUrl && !imageUrl && attachments.length === 0) {
     return null;
   }
 
@@ -35,6 +56,7 @@ function buildNormalizedItem(rawItem, config, scrapedAt, sortRank) {
     link: postUrl || config.linkedinCompanyUrl,
     postUrl,
     imageUrl,
+    attachments,
     publishedAt: exactPublishedAt || scrapedAt,
     usedFallbackDate: !exactPublishedAt,
     sourceUrl: config.linkedinCompanyUrl,

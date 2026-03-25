@@ -7,6 +7,7 @@ The repository only produces an RSS feed. It does not send anything directly to 
 ## What it does
 
 - Scrapes the latest posts from a public LinkedIn company page.
+- Best-effort captures attachment metadata for images, videos, and documents when LinkedIn exposes those assets to guest visitors.
 - Uses Playwright because LinkedIn content is dynamic and may require scrolling.
 - Keeps state in `data/feed.json` so GUIDs remain stable and duplicate posts are not added again.
 - Keeps the newest 20 items in the final feed.
@@ -178,11 +179,83 @@ Link: @{triggerBody()?['primaryLink']}
 
 The repository also includes `teams-message-template.txt` with a Portuguese message template you can adapt inside Power Automate.
 
+## Separate web UI in `/web`
+
+The repository root remains the source of truth for RSS generation. The existing GitHub Actions workflow still updates `public/feed.xml`, GitHub Pages still publishes that file, and Power Automate should continue consuming the GitHub-hosted feed URL exactly as before.
+
+The `/web` folder is a separate Next.js application that only reads the RSS feed and presents it in a modern dashboard. It does not generate feed data, does not replace the root pipeline, and does not post anything to Teams.
+
+### What `/web` does
+
+- Fetches the RSS feed from `RSS_FEED_URL`
+- Parses and normalizes feed items into a clean internal model
+- Provides a responsive dashboard with search, filters, sorting, and detail pages
+- Keeps the UI isolated so it can be deployed independently on Netlify
+
+### Run `/web` locally
+
+1. Open the web app folder:
+
+   ```bash
+   cd web
+   ```
+
+2. Install the web app dependencies:
+
+   ```bash
+   npm install
+   ```
+
+3. Create a local environment file:
+
+   ```bash
+   cp .env.example .env.local
+   ```
+
+4. Set `RSS_FEED_URL` in `web/.env.local` to the existing public GitHub Pages feed URL. Example:
+
+   ```env
+   RSS_FEED_URL=https://<owner>.github.io/<repository>/feed.xml
+   ```
+
+5. Start the development server:
+
+   ```bash
+   npm run dev
+   ```
+
+6. Open `http://localhost:3000`
+
+### Deploy `/web` to Netlify
+
+Deploy only the `/web` folder as a separate site.
+
+Recommended Netlify settings:
+
+- Base directory: `web`
+- Build command: `npm run build`
+- Publish directory: leave empty and let the Next.js Netlify plugin manage it
+- Node version: `20`
+
+Set this environment variable in Netlify:
+
+- `RSS_FEED_URL` = the existing GitHub Pages RSS URL served from this repository
+
+The `/web/netlify.toml` file includes the Next.js Netlify plugin configuration.
+
+### Separation of responsibilities
+
+- Root workflow `.github/workflows/build-feed.yml` continues generating and publishing `public/feed.xml`
+- GitHub Pages continues hosting the RSS file
+- Power Automate continues using the GitHub-hosted `feed.xml`
+- `/web` only consumes the feed and can be deployed independently on Netlify
+
 ## Feed behavior
 
 - Stable GUIDs are based on the LinkedIn post URL whenever available.
 - If a stable post URL is not available, the code derives a GUID from the post content and image URL.
 - New items are merged into the existing state file, deduped, sorted newest first, and trimmed to the latest 20 items.
+- When LinkedIn exposes guest-accessible attachment assets, the feed preserves image, video, and document metadata in the generated item description HTML and in `data/feed.json`.
 - If LinkedIn does not expose a reliable publication timestamp, the feed uses the first successful scrape time as `pubDate`.
 - If the scraper returns zero items, the build fails and keeps the previous `public/feed.xml` and `data/feed.json` unchanged.
 
@@ -210,6 +283,15 @@ The repository also includes `teams-message-template.txt` with a Portuguese mess
 ├── .github/workflows/build-feed.yml
 ├── data/feed.json
 ├── public/feed.xml
+├── web/
+│   ├── .env.example
+│   ├── app/
+│   ├── components/
+│   ├── lib/
+│   ├── netlify.toml
+│   ├── package.json
+│   ├── tailwind.config.ts
+│   └── tsconfig.json
 ├── src/config.js
 ├── src/index.js
 ├── src/rss.js

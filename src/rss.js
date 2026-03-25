@@ -32,6 +32,19 @@ function buildItemTitle(text, fallbackTitle) {
 
 function buildItemDescription(item) {
   const fragments = [];
+  const attachments =
+    Array.isArray(item.attachments) && item.attachments.length > 0
+      ? item.attachments
+      : item.imageUrl
+        ? [
+            {
+              type: "image",
+              url: item.imageUrl,
+              thumbnailUrl: item.imageUrl,
+              title: "LinkedIn post image"
+            }
+          ]
+        : [];
 
   if (item.description) {
     fragments.push(
@@ -39,10 +52,39 @@ function buildItemDescription(item) {
     );
   }
 
-  if (item.imageUrl) {
-    fragments.push(
-      `<p><img src="${escapeXml(item.imageUrl)}" alt="LinkedIn post image" /></p>`
-    );
+  for (const attachment of attachments) {
+    const title = attachment.title || `LinkedIn ${attachment.type} attachment`;
+    const figureAttributes = [
+      `data-linkedin-attachment-type="${escapeXml(attachment.type)}"`,
+      attachment.url
+        ? `data-linkedin-attachment-url="${escapeXml(attachment.url)}"`
+        : "",
+      attachment.thumbnailUrl
+        ? `data-linkedin-attachment-thumbnail-url="${escapeXml(attachment.thumbnailUrl)}"`
+        : "",
+      attachment.title
+        ? `data-linkedin-attachment-title="${escapeXml(attachment.title)}"`
+        : ""
+    ]
+      .filter(Boolean)
+      .join(" ");
+    const figureFragments = [];
+
+    if (attachment.thumbnailUrl) {
+      figureFragments.push(
+        `<img src="${escapeXml(attachment.thumbnailUrl)}" alt="${escapeXml(title)}" />`
+      );
+    }
+
+    if (attachment.type !== "image" && attachment.url) {
+      figureFragments.push(
+        `<p><a href="${escapeXml(attachment.url)}">${escapeXml(title)}</a></p>`
+      );
+    }
+
+    if (figureFragments.length > 0) {
+      fragments.push(`<figure ${figureAttributes}>${figureFragments.join("")}</figure>`);
+    }
   }
 
   if (item.usedFallbackDate) {

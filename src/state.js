@@ -7,6 +7,7 @@ const EMPTY_STATE = {
   sourceUrl: null,
   items: []
 };
+const SUPPORTED_ATTACHMENT_TYPES = new Set(["image", "video", "document"]);
 
 function normalizeText(value) {
   if (!value) {
@@ -22,7 +23,7 @@ function normalizeText(value) {
     .trim();
 }
 
-function normalizeUrl(value) {
+function normalizeUrl(value, options = {}) {
   if (!value) {
     return null;
   }
@@ -31,7 +32,7 @@ function normalizeUrl(value) {
     const parsed = new URL(String(value).trim());
     parsed.hash = "";
 
-    if (/linkedin\.com$/i.test(parsed.hostname)) {
+    if (!options.preserveSearch && /linkedin\.com$/i.test(parsed.hostname)) {
       parsed.search = "";
     }
 
@@ -70,6 +71,75 @@ function pickPreferredString(primary, fallback) {
   return normalizedPrimary.length >= normalizedFallback.length ? normalizedPrimary : normalizedFallback;
 }
 
+function sanitizeAttachment(attachment) {
+  if (!attachment || typeof attachment.type !== "string") {
+    return null;
+  }
+
+  const type = attachment.type.trim().toLowerCase();
+
+  if (!SUPPORTED_ATTACHMENT_TYPES.has(type)) {
+    return null;
+  }
+
+  const url = normalizeUrl(attachment.url, { preserveSearch: true });
+  const thumbnailUrl = normalizeUrl(attachment.thumbnailUrl, { preserveSearch: true });
+  const title = pickPreferredString(attachment.title, null);
+
+  if (!url && !thumbnailUrl) {
+    return null;
+  }
+
+  return {
+    type,
+    url,
+    thumbnailUrl: thumbnailUrl || (type === "image" ? url : null),
+    title
+  };
+}
+
+function mergeAttachments(existingAttachments, incomingAttachments) {
+  const attachmentMap = new Map();
+
+  for (const attachment of [...(existingAttachments || []), ...(incomingAttachments || [])]) {
+    const sanitized = sanitizeAttachment(attachment);
+
+    if (!sanitized) {
+      continue;
+    }
+
+    const key = [
+      sanitized.type,
+      sanitized.url || "",
+      sanitized.thumbnailUrl || ""
+    ].join("|");
+    const existing = attachmentMap.get(key);
+
+    attachmentMap.set(
+      key,
+      existing
+        ? {
+            ...existing,
+            title: pickPreferredString(sanitized.title, existing.title)
+          }
+        : sanitized
+    );
+  }
+
+  return Array.from(attachmentMap.values());
+}
+
+function pickPrimaryImageUrl(imageUrl, attachments) {
+  const normalizedImageUrl = normalizeUrl(imageUrl, { preserveSearch: true });
+
+  if (normalizedImageUrl) {
+    return normalizedImageUrl;
+  }
+
+  const imageAttachment = (attachments || []).find((attachment) => attachment.type === "image");
+  return imageAttachment?.thumbnailUrl || imageAttachment?.url || null;
+}
+
 function sanitizeItem(item) {
   if (!item || typeof item.guid !== "string" || item.guid.trim() === "") {
     return null;
@@ -79,6 +149,7 @@ function sanitizeItem(item) {
   const normalizedFirstSeenAt = normalizeDate(item.firstSeenAt) || normalizedPublishedAt;
   const normalizedLastSeenAt =
     normalizeDate(item.lastSeenAt) || normalizeDate(item.scrapedAt) || normalizedFirstSeenAt;
+  const attachments = mergeAttachments([], item.attachments);
 
   return {
     guid: item.guid.trim(),
@@ -86,7 +157,8 @@ function sanitizeItem(item) {
     description: pickPreferredString(item.description, null) || "",
     link: normalizeUrl(item.link) || normalizeUrl(item.postUrl) || null,
     postUrl: normalizeUrl(item.postUrl),
-    imageUrl: normalizeUrl(item.imageUrl),
+    imageUrl: pickPrimaryImageUrl(item.imageUrl, attachments),
+    attachments,
     publishedAt: normalizedPublishedAt || normalizedFirstSeenAt || new Date(0).toISOString(),
     usedFallbackDate: item.usedFallbackDate !== false,
     sourceUrl: normalizeUrl(item.sourceUrl),
@@ -141,6 +213,7 @@ function mergeTwoItems(existing, incoming) {
   const usedFallbackDate = shouldPromoteExactDate
     ? false
     : existingItem.usedFallbackDate && incomingItem.usedFallbackDate;
+  const attachments = mergeAttachments(existingItem.attachments, incomingItem.attachments);
 
   return {
     guid: existingItem.guid,
@@ -148,7 +221,8 @@ function mergeTwoItems(existing, incoming) {
     description: pickPreferredString(incomingItem.description, existingItem.description) || "",
     link: incomingItem.link || existingItem.link || incomingItem.postUrl || existingItem.postUrl,
     postUrl: incomingItem.postUrl || existingItem.postUrl,
-    imageUrl: incomingItem.imageUrl || existingItem.imageUrl,
+    imageUrl: pickPrimaryImageUrl(incomingItem.imageUrl || existingItem.imageUrl, attachments),
+    attachments,
     publishedAt,
     usedFallbackDate,
     sourceUrl: incomingItem.sourceUrl || existingItem.sourceUrl,
