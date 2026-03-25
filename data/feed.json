@@ -1,7 +1,75 @@
 {
-  "generatedAt": "2026-03-25T23:42:37.417Z",
+  "generatedAt": "2026-03-25T23:58:16.770Z",
   "sourceUrl": "https://www.linkedin.com/company/skills-workflow/",
   "items": [
+    {
+      "guid": "urn:linkedin-rss:5d7ff7d6e2b0ddb5e990add4c92f681e8eaee994",
+      "title": "Most creative agencies manage their resources with a WhatsApp group and a shared Google...",
+      "description": "Most creative agencies manage their resources with a WhatsApp group and a shared Google Calendar. True story!\nA producer pings the group asking who's free next week. The account director checks the calendar to see if anyone's double-booked. The ops manager keeps a spreadsheet that's three days out of date.\nAnd somehow, a project gets staffed.\nIt works. Until it doesn't.\nA designer gets pulled onto two campaigns at once. A developer goes from zero to fully booked with nothing in between. Three weeks later, you find out your best copywriter is sitting at 140% capacity while two junior creatives have had barely a day of work between them.\nAt that point, you've got a visibility problem, not a headcount problem.\n\nThe agencies I've seen grow well aren't always the ones with the best talent. They're the ones who know exactly where that talent is at any given moment.\n\nIn Skills Workflow, resource assignment happens by skills, availability, and client affinity, not by whoever responds to a message first. Managers see workload views across the full team. Capacity gaps surface before they become crises.\n\nLast year, 59% of agencies grew revenue. Only 31% improved their margins. A lot of that gap lives in the invisible stuff, the overbooked designers, the idle juniors, the projects you said no to because you didn't think you had capacity.\nYou had capacity. You just couldn't see it.\n\nWhat tool does your agency actually use for resource planning right now?\n\n#AgencyOps #ResourceManagement #CreativeAgency #SkillsWorkflow #AgencyManagement\n\n…more",
+      "link": "https://www.linkedin.com/company/skills-workflow/",
+      "postUrl": null,
+      "imageUrl": "https://static.licdn.com/aero-v1/sc/h/bn39hirwzjqj18ej1fkz55671",
+      "attachments": [
+        {
+          "type": "video",
+          "url": "https://dms.licdn.com/playlist/vid/v2/D5605AQHRVqb-Wq5kxg/mp4-720p-30fp-crf28/B56Z0mIqaZG8CM-/0/1774461299502?e=2147483647&v=beta&t=t9Yt2SP_eOHi_0KklWhjqxs9jEl_in5Enz3V7TMwJDU",
+          "thumbnailUrl": "https://media.licdn.com/dms/image/v2/D5605AQHRVqb-Wq5kxg/videocover-low/B56Z0mIqaZG8BY-/0/1774461299347?e=2147483647&v=beta&t=NsZL1VoVOX_NCZAkI7_uFzEWcR9cBpWS_gGniRRm2dk",
+          "title": "LinkedIn video attachment"
+        },
+        {
+          "type": "image",
+          "url": "https://static.licdn.com/aero-v1/sc/h/bn39hirwzjqj18ej1fkz55671",
+          "thumbnailUrl": "https://static.licdn.com/aero-v1/sc/h/bn39hirwzjqj18ej1fkz55671",
+          "title": "LinkedIn post image"
+        }
+      ],
+      "publishedAt": "2026-03-25T23:58:16.770Z",
+      "usedFallbackDate": true,
+      "sourceUrl": "https://www.linkedin.com/company/skills-workflow/",
+      "firstSeenAt": "2026-03-25T23:58:16.770Z",
+      "lastSeenAt": "2026-03-25T23:58:16.770Z",
+      "scrapedAt": "2026-03-25T23:58:16.770Z",
+      "sortRank": 0
+    },
+    {
+      "guid": "urn:linkedin-rss:fcdab93a0f29049584f7370fca48fc8f4b196530",
+      "title": "Most PMs are making budget decisions based on week-old data.",
+      "description": "Most PMs are making budget decisions\nbased on week-old data.\n\nBy the time they see the report, they're already over.\n\nReal-time budget tracking changes everything.\n\nClient asks: \"How much budget do we have left?\"\n\nYou should know the answer instantly.\n\nInstead, you're calculating:\n→ Time logged so far\n→ Expenses submitted\n→ Outstanding vendor invoices\n→ Team hours scheduled ahead\n→ Resources already allocated\n\nBy the time you compile everything,\nthe number is already outdated.\n\nHere's the problem:\n\nBudget tracking happens after the spending.\nNot during the spending.\n\nFinance runs reports weekly.\nBut projects burn budget daily.\n\nSkills Workflow tracks budget burn in real-time.\n\nEvery hour logged → updates budget automatically\nEvery expense approved → deducted instantly\nEvery resource assigned → calculated against remaining budget\n\nProject at 60% complete?\nSee exactly how much budget remains.\nRight now. Not next week.\n\nPMs make better decisions\nbecause they see financial impact immediately.\n\n\"Should we add another designer to this?\"\nThe system shows remaining budget.\nDecision made in seconds.\n\nAgencies report catching budget issues\nwhile there's still time to adjust.\n\nNot when the project is already over budget.\nWhen it starts trending that way.\n\nSwipe through to see how budget burn tracking works →\n\nBook a demo: https://lnkd.in/gTRTFd_V\n\nStop discovering overruns after they happen.",
+      "link": "https://www.linkedin.com/company/skills-workflow/",
+      "postUrl": null,
+      "imageUrl": "https://static.licdn.com/aero-v1/sc/h/bn39hirwzjqj18ej1fkz55671",
+      "attachments": [
+        {
+          "type": "image",
+          "url": "https://static.licdn.com/aero-v1/sc/h/bn39hirwzjqj18ej1fkz55671",
+          "thumbnailUrl": "https://static.licdn.com/aero-v1/sc/h/bn39hirwzjqj18ej1fkz55671",
+          "title": "LinkedIn post image"
+        }
+      ],
+      "publishedAt": "2026-03-25T23:58:16.770Z",
+      "usedFallbackDate": true,
+      "sourceUrl": "https://www.linkedin.com/company/skills-workflow/",
+      "firstSeenAt": "2026-03-25T23:58:16.770Z",
+      "lastSeenAt": "2026-03-25T23:58:16.770Z",
+      "scrapedAt": "2026-03-25T23:58:16.770Z",
+      "sortRank": 3
+    },
+    {
+      "guid": "urn:linkedin-rss:5e2b9fb41632fef190d084290bff3972504ca983",
+      "title": "Billable hours disappear.",
+      "description": "Billable hours disappear.\n\nNot because teams aren't working.\nBecause time trackers live somewhere else.\n\nHere's what happens:\n\nA designer finishes a client call.\nOpens Figma to start work.\nForgets to log time in Time Tracking System.\nRemembers at 4 PM.\nCan't recall exact start time.\nGuesses. Underestimates.\n\nMultiply that across your entire team.\nMultiple projects per person.\nEvery single day.\n\nAgencies lose significant revenue annually.\nIn work they can't bill.\nBecause they already delivered it.\n\nThe fix isn't nagging teams harder.\nIt's capturing time where work happens.\n\nSkills Workflow integrates time tracking\ndirectly into project workflows.\n\n→ Auto-capture time when you start & end task status\n→ Auto-populate from calendar blocks\n→ Log time from mobile between meetings\n→ Track against budgets in real-time\n→ Flow straight into invoices\n→ Zero separate apps to remember\n\nAgencies recover thousands of dollars in unbilled hours\nwithin their first month.\n\nJust by making time tracking\npart of the work.\nNot homework after the work.\n\nTeams bill more.\nAgencies collect more.\nNobody opens another tab.\n\nBook a demo: https://lnkd.in/gTRTFd_V\n\nStop losing billable hours to broken systems.",
+      "link": "https://www.linkedin.com/company/skills-workflow/",
+      "postUrl": null,
+      "imageUrl": null,
+      "attachments": [],
+      "publishedAt": "2026-03-25T23:58:16.770Z",
+      "usedFallbackDate": true,
+      "sourceUrl": "https://www.linkedin.com/company/skills-workflow/",
+      "firstSeenAt": "2026-03-25T23:58:16.770Z",
+      "lastSeenAt": "2026-03-25T23:58:16.770Z",
+      "scrapedAt": "2026-03-25T23:58:16.770Z",
+      "sortRank": 16
+    },
     {
       "guid": "urn:linkedin-rss:017c1549d9c9b602d7f8382a38ca46919aa743e6",
       "title": "Lorem Ipsum is simply dummy text of the printing and typesetting industry.",
@@ -147,9 +215,9 @@
       "usedFallbackDate": true,
       "sourceUrl": "https://www.linkedin.com/company/skills-workflow/",
       "firstSeenAt": "2026-03-25T21:41:07.505Z",
-      "lastSeenAt": "2026-03-25T23:33:02.878Z",
-      "scrapedAt": "2026-03-25T23:33:02.878Z",
-      "sortRank": 2
+      "lastSeenAt": "2026-03-25T23:58:16.770Z",
+      "scrapedAt": "2026-03-25T23:58:16.770Z",
+      "sortRank": 1
     },
     {
       "guid": "urn:linkedin-rss:3d467af4bc32a9cf8a89b8a3f200ffcba33a1e75",
@@ -179,9 +247,9 @@
       "usedFallbackDate": true,
       "sourceUrl": "https://www.linkedin.com/company/skills-workflow/",
       "firstSeenAt": "2026-03-25T21:41:07.505Z",
-      "lastSeenAt": "2026-03-25T23:42:37.417Z",
-      "scrapedAt": "2026-03-25T23:42:37.417Z",
-      "sortRank": 6
+      "lastSeenAt": "2026-03-25T23:58:16.770Z",
+      "scrapedAt": "2026-03-25T23:58:16.770Z",
+      "sortRank": 5
     },
     {
       "guid": "urn:linkedin-rss:60e6c5c80c6f94a348d0a59265f2145feb898838",
@@ -195,9 +263,9 @@
       "usedFallbackDate": true,
       "sourceUrl": "https://www.linkedin.com/company/skills-workflow/",
       "firstSeenAt": "2026-03-25T21:41:07.505Z",
-      "lastSeenAt": "2026-03-25T23:42:37.417Z",
-      "scrapedAt": "2026-03-25T23:42:37.417Z",
-      "sortRank": 7
+      "lastSeenAt": "2026-03-25T23:58:16.770Z",
+      "scrapedAt": "2026-03-25T23:58:16.770Z",
+      "sortRank": 6
     },
     {
       "guid": "urn:linkedin-rss:b2328757f3efd506daf715258b7ed1fffa355b74",
@@ -211,9 +279,9 @@
       "usedFallbackDate": true,
       "sourceUrl": "https://www.linkedin.com/company/skills-workflow/",
       "firstSeenAt": "2026-03-25T21:41:07.505Z",
-      "lastSeenAt": "2026-03-25T23:42:37.417Z",
-      "scrapedAt": "2026-03-25T23:42:37.417Z",
-      "sortRank": 9
+      "lastSeenAt": "2026-03-25T23:58:16.770Z",
+      "scrapedAt": "2026-03-25T23:58:16.770Z",
+      "sortRank": 8
     },
     {
       "guid": "urn:linkedin-rss:571025c44ffb31c3229995b8ee18807abbf4da33",
@@ -227,9 +295,9 @@
       "usedFallbackDate": true,
       "sourceUrl": "https://www.linkedin.com/company/skills-workflow/",
       "firstSeenAt": "2026-03-25T21:41:07.505Z",
-      "lastSeenAt": "2026-03-25T23:42:37.417Z",
-      "scrapedAt": "2026-03-25T23:42:37.417Z",
-      "sortRank": 11
+      "lastSeenAt": "2026-03-25T23:58:16.770Z",
+      "scrapedAt": "2026-03-25T23:58:16.770Z",
+      "sortRank": 10
     },
     {
       "guid": "urn:linkedin-rss:31462ece580671b037caa082ddc4b0eeea7b78bc",
@@ -243,9 +311,9 @@
       "usedFallbackDate": true,
       "sourceUrl": "https://www.linkedin.com/company/skills-workflow/",
       "firstSeenAt": "2026-03-25T21:41:07.505Z",
-      "lastSeenAt": "2026-03-25T23:33:02.878Z",
-      "scrapedAt": "2026-03-25T23:33:02.878Z",
-      "sortRank": 13
+      "lastSeenAt": "2026-03-25T23:58:16.770Z",
+      "scrapedAt": "2026-03-25T23:58:16.770Z",
+      "sortRank": 12
     },
     {
       "guid": "urn:linkedin-rss:dba0b6ed930ade7b18386bf353551a1fe378803c",
@@ -259,9 +327,9 @@
       "usedFallbackDate": true,
       "sourceUrl": "https://www.linkedin.com/company/skills-workflow/",
       "firstSeenAt": "2026-03-25T21:41:07.505Z",
-      "lastSeenAt": "2026-03-25T22:37:21.384Z",
-      "scrapedAt": "2026-03-25T22:37:21.384Z",
-      "sortRank": 15
+      "lastSeenAt": "2026-03-25T23:58:16.770Z",
+      "scrapedAt": "2026-03-25T23:58:16.770Z",
+      "sortRank": 14
     }
   ]
 }
