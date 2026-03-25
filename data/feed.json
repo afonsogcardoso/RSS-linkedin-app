@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-25T22:37:21.384Z",
+  "generatedAt": "2026-03-25T23:33:02.878Z",
   "sourceUrl": "https://www.linkedin.com/company/skills-workflow/",
   "items": [
     {
@@ -9,12 +9,26 @@
       "link": "https://www.linkedin.com/company/skills-workflow/",
       "postUrl": null,
       "imageUrl": "https://static.licdn.com/aero-v1/sc/h/bn39hirwzjqj18ej1fkz55671",
+      "attachments": [
+        {
+          "type": "video",
+          "url": "https://dms.licdn.com/playlist/vid/v2/D5605AQHRVqb-Wq5kxg/mp4-720p-30fp-crf28/B56Z0mIqaZG8CM-/0/1774461299502?e=2147483647&v=beta&t=t9Yt2SP_eOHi_0KklWhjqxs9jEl_in5Enz3V7TMwJDU",
+          "thumbnailUrl": "https://media.licdn.com/dms/image/v2/D5605AQHRVqb-Wq5kxg/videocover-low/B56Z0mIqaZG8BY-/0/1774461299347?e=2147483647&v=beta&t=NsZL1VoVOX_NCZAkI7_uFzEWcR9cBpWS_gGniRRm2dk",
+          "title": "LinkedIn video attachment"
+        },
+        {
+          "type": "image",
+          "url": "https://static.licdn.com/aero-v1/sc/h/bn39hirwzjqj18ej1fkz55671",
+          "thumbnailUrl": "https://static.licdn.com/aero-v1/sc/h/bn39hirwzjqj18ej1fkz55671",
+          "title": "LinkedIn post image"
+        }
+      ],
       "publishedAt": "2026-03-25T21:41:07.505Z",
       "usedFallbackDate": true,
       "sourceUrl": "https://www.linkedin.com/company/skills-workflow/",
       "firstSeenAt": "2026-03-25T21:41:07.505Z",
-      "lastSeenAt": "2026-03-25T22:37:21.384Z",
-      "scrapedAt": "2026-03-25T22:37:21.384Z",
+      "lastSeenAt": "2026-03-25T23:33:02.878Z",
+      "scrapedAt": "2026-03-25T23:33:02.878Z",
       "sortRank": 0
     },
     {
@@ -24,12 +38,20 @@
       "link": "https://www.linkedin.com/company/skills-workflow/",
       "postUrl": null,
       "imageUrl": "https://static.licdn.com/aero-v1/sc/h/bn39hirwzjqj18ej1fkz55671",
+      "attachments": [
+        {
+          "type": "image",
+          "url": "https://static.licdn.com/aero-v1/sc/h/bn39hirwzjqj18ej1fkz55671",
+          "thumbnailUrl": "https://static.licdn.com/aero-v1/sc/h/bn39hirwzjqj18ej1fkz55671",
+          "title": "LinkedIn post image"
+        }
+      ],
       "publishedAt": "2026-03-25T21:41:07.505Z",
       "usedFallbackDate": true,
       "sourceUrl": "https://www.linkedin.com/company/skills-workflow/",
       "firstSeenAt": "2026-03-25T21:41:07.505Z",
-      "lastSeenAt": "2026-03-25T22:37:21.384Z",
-      "scrapedAt": "2026-03-25T22:37:21.384Z",
+      "lastSeenAt": "2026-03-25T23:33:02.878Z",
+      "scrapedAt": "2026-03-25T23:33:02.878Z",
       "sortRank": 2
     },
     {
@@ -39,12 +61,13 @@
       "link": "https://www.linkedin.com/company/skills-workflow/",
       "postUrl": null,
       "imageUrl": null,
+      "attachments": [],
       "publishedAt": "2026-03-25T21:41:07.505Z",
       "usedFallbackDate": true,
       "sourceUrl": "https://www.linkedin.com/company/skills-workflow/",
       "firstSeenAt": "2026-03-25T21:41:07.505Z",
-      "lastSeenAt": "2026-03-25T22:37:21.384Z",
-      "scrapedAt": "2026-03-25T22:37:21.384Z",
+      "lastSeenAt": "2026-03-25T23:33:02.878Z",
+      "scrapedAt": "2026-03-25T23:33:02.878Z",
       "sortRank": 4
     },
     {
@@ -54,12 +77,13 @@
       "link": "https://www.linkedin.com/company/skills-workflow/",
       "postUrl": null,
       "imageUrl": null,
+      "attachments": [],
       "publishedAt": "2026-03-25T21:41:07.505Z",
       "usedFallbackDate": true,
       "sourceUrl": "https://www.linkedin.com/company/skills-workflow/",
       "firstSeenAt": "2026-03-25T21:41:07.505Z",
-      "lastSeenAt": "2026-03-25T22:37:21.384Z",
-      "scrapedAt": "2026-03-25T22:37:21.384Z",
+      "lastSeenAt": "2026-03-25T23:33:02.878Z",
+      "scrapedAt": "2026-03-25T23:33:02.878Z",
       "sortRank": 6
     },
     {
@@ -69,12 +93,13 @@
       "link": "https://www.linkedin.com/company/skills-workflow/",
       "postUrl": null,
       "imageUrl": null,
+      "attachments": [],
       "publishedAt": "2026-03-25T21:41:07.505Z",
       "usedFallbackDate": true,
       "sourceUrl": "https://www.linkedin.com/company/skills-workflow/",
       "firstSeenAt": "2026-03-25T21:41:07.505Z",
-      "lastSeenAt": "2026-03-25T22:37:21.384Z",
-      "scrapedAt": "2026-03-25T22:37:21.384Z",
+      "lastSeenAt": "2026-03-25T23:33:02.878Z",
+      "scrapedAt": "2026-03-25T23:33:02.878Z",
       "sortRank": 7
     },
     {
@@ -84,12 +109,13 @@
       "link": "https://www.linkedin.com/company/skills-workflow/",
       "postUrl": null,
       "imageUrl": null,
+      "attachments": [],
       "publishedAt": "2026-03-25T21:41:07.505Z",
       "usedFallbackDate": true,
       "sourceUrl": "https://www.linkedin.com/company/skills-workflow/",
       "firstSeenAt": "2026-03-25T21:41:07.505Z",
-      "lastSeenAt": "2026-03-25T22:37:21.384Z",
-      "scrapedAt": "2026-03-25T22:37:21.384Z",
+      "lastSeenAt": "2026-03-25T23:33:02.878Z",
+      "scrapedAt": "2026-03-25T23:33:02.878Z",
       "sortRank": 9
     },
     {
@@ -99,12 +125,13 @@
       "link": "https://www.linkedin.com/company/skills-workflow/",
       "postUrl": null,
       "imageUrl": null,
+      "attachments": [],
       "publishedAt": "2026-03-25T21:41:07.505Z",
       "usedFallbackDate": true,
       "sourceUrl": "https://www.linkedin.com/company/skills-workflow/",
       "firstSeenAt": "2026-03-25T21:41:07.505Z",
-      "lastSeenAt": "2026-03-25T22:37:21.384Z",
-      "scrapedAt": "2026-03-25T22:37:21.384Z",
+      "lastSeenAt": "2026-03-25T23:33:02.878Z",
+      "scrapedAt": "2026-03-25T23:33:02.878Z",
       "sortRank": 11
     },
     {
@@ -114,12 +141,13 @@
       "link": "https://www.linkedin.com/company/skills-workflow/",
       "postUrl": null,
       "imageUrl": null,
+      "attachments": [],
       "publishedAt": "2026-03-25T21:41:07.505Z",
       "usedFallbackDate": true,
       "sourceUrl": "https://www.linkedin.com/company/skills-workflow/",
       "firstSeenAt": "2026-03-25T21:41:07.505Z",
-      "lastSeenAt": "2026-03-25T22:37:21.384Z",
-      "scrapedAt": "2026-03-25T22:37:21.384Z",
+      "lastSeenAt": "2026-03-25T23:33:02.878Z",
+      "scrapedAt": "2026-03-25T23:33:02.878Z",
       "sortRank": 13
     },
     {
@@ -129,6 +157,7 @@
       "link": "https://www.linkedin.com/company/skills-workflow/",
       "postUrl": null,
       "imageUrl": null,
+      "attachments": [],
       "publishedAt": "2026-03-25T21:41:07.505Z",
       "usedFallbackDate": true,
       "sourceUrl": "https://www.linkedin.com/company/skills-workflow/",
