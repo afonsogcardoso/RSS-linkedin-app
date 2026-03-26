@@ -136,6 +136,28 @@ async function extractRawPosts(page, config) {
       return POST_URL_PATTERN.test(String(value || ""));
     }
 
+    function decodeEmbeddedMarkup(value) {
+      return String(value || "")
+        .replace(/\\u002F/g, "/")
+        .replace(/\\\//g, "/")
+        .replace(/&amp;/g, "&");
+    }
+
+    function extractActivityId(value) {
+      const match = String(value || "").match(/(?:activity-|urn:li:activity:)(\d+)/i);
+      return match ? match[1] : null;
+    }
+
+    function extractDirectPostUrls(value) {
+      const decoded = decodeEmbeddedMarkup(value);
+      const matches =
+        decoded.match(/https:\/\/www\.linkedin\.com\/posts\/[^"'\\\s<]+/gi) || [];
+
+      return Array.from(new Set(matches))
+        .map((match) => cleanUrl(match))
+        .filter((match) => match && looksLikePostUrl(match));
+    }
+
     function cleanUrl(value, options = {}) {
       if (!value) {
         return null;
@@ -199,7 +221,10 @@ async function extractRawPosts(page, config) {
           const text = normalizeWhitespace(match.innerText || match.textContent || "");
 
           if (text.length >= 20) {
-            return text.slice(0, MAX_TEXT_LENGTH);
+            return {
+              value: text.slice(0, MAX_TEXT_LENGTH),
+              fromSelector: true
+            };
           }
         }
       }
@@ -233,10 +258,98 @@ async function extractRawPosts(page, config) {
         }
       }
 
-      return normalizeWhitespace(filtered.join("\n")).slice(0, MAX_TEXT_LENGTH);
+      return {
+        value: normalizeWhitespace(filtered.join("\n")).slice(0, MAX_TEXT_LENGTH),
+        fromSelector: false
+      };
     }
 
-    function extractPostUrl(container) {
+    function extractActivityUrn(container) {
+      let current = container;
+
+      for (let depth = 0; current && depth < 8; depth += 1, current = current.parentElement) {
+        if (!(current instanceof HTMLElement)) {
+          continue;
+        }
+
+        for (const attributeName of ["data-id", "data-urn"]) {
+          const rawValue = normalizeWhitespace(current.getAttribute(attributeName) || "");
+
+          if (/^urn:li:activity:\d+$/i.test(rawValue)) {
+            return rawValue;
+          }
+        }
+      }
+
+      const directUrnMatch = decodeEmbeddedMarkup(container.innerHTML || "").match(
+        /urn:li:activity:(\d+)/i
+      );
+
+      if (directUrnMatch) {
+        return `urn:li:activity:${directUrnMatch[1]}`;
+      }
+
+      const activityIdFromMarkup = extractActivityId(container.innerHTML || "");
+
+      if (activityIdFromMarkup) {
+        return `urn:li:activity:${activityIdFromMarkup}`;
+      }
+
+      const descendantUrns = Array.from(
+        container.querySelectorAll("[data-id^='urn:li:activity:'], [data-urn^='urn:li:activity:']")
+      )
+        .map((node) => {
+          if (!(node instanceof HTMLElement)) {
+            return null;
+          }
+
+          return normalizeWhitespace(node.getAttribute("data-id") || node.getAttribute("data-urn") || "");
+        })
+        .filter((value) => /^urn:li:activity:\d+$/i.test(value));
+      const uniqueUrns = Array.from(new Set(descendantUrns));
+
+      if (uniqueUrns.length === 1) {
+        return uniqueUrns[0];
+      }
+
+      return null;
+    }
+
+    function buildPostUrlFromActivityUrn(activityUrn) {
+      if (!activityUrn) {
+        return null;
+      }
+
+      return `https://www.linkedin.com/feed/update/${activityUrn}/`;
+    }
+
+    function buildPostUrlIndex() {
+      const postUrlMap = new Map();
+
+      for (const match of extractDirectPostUrls(document.documentElement?.innerHTML || "")) {
+        const activityId = extractActivityId(match);
+
+        if (activityId && !postUrlMap.has(activityId)) {
+          postUrlMap.set(activityId, match);
+        }
+      }
+
+      for (const link of document.querySelectorAll("a[href]")) {
+        const href = link.getAttribute("href") || link.href;
+
+        for (const match of extractDirectPostUrls(href)) {
+          const activityId = extractActivityId(match);
+
+          if (activityId && !postUrlMap.has(activityId)) {
+            postUrlMap.set(activityId, match);
+          }
+        }
+      }
+
+      return postUrlMap;
+    }
+
+    function extractPostUrl(container, postUrlByActivityId) {
       const links = Array.from(container.querySelectorAll("a[href]"));
 
       for (const link of links) {
@@ -248,7 +361,20 @@ async function extractRawPosts(page, config) {
         }
       }
 
-      return null;
+      const embeddedPostUrl = extractDirectPostUrls(container.innerHTML || "")[0];
+
+      if (embeddedPostUrl) {
+        return embeddedPostUrl;
+      }
+
+      const activityUrn = extractActivityUrn(container);
+      const activityId = extractActivityId(activityUrn);
+
+      if (activityId && postUrlByActivityId.has(activityId)) {
+        return postUrlByActivityId.get(activityId);
+      }
+
+      return buildPostUrlFromActivityUrn(activityUrn);
     }
 
     function extractTimestamp(container) {
@@ -475,6 +601,139 @@ async function extractRawPosts(page, config) {
       ]);
     }
 
+    function pickPreferredText(primary, secondary) {
+      const primaryText = normalizeWhitespace(primary?.value || "");
+      const secondaryText = normalizeWhitespace(secondary?.value || "");
+
+      if (!primaryText) {
+        return {
+          value: secondaryText,
+          fromSelector: Boolean(secondary?.fromSelector)
+        };
+      }
+
+      if (!secondaryText) {
+        return {
+          value: primaryText,
+          fromSelector: Boolean(primary?.fromSelector)
+        };
+      }
+
+      if (Boolean(primary?.fromSelector) !== Boolean(secondary?.fromSelector)) {
+        return Boolean(primary?.fromSelector)
+          ? { value: primaryText, fromSelector: true }
+          : { value: secondaryText, fromSelector: true };
+      }
+
+      return primaryText.length >= secondaryText.length
+        ? {
+            value: primaryText,
+            fromSelector: Boolean(primary?.fromSelector)
+          }
+        : {
+            value: secondaryText,
+            fromSelector: Boolean(secondary?.fromSelector)
+          };
+    }
+
+    function choosePrimaryImageUrl(imageUrl, attachments) {
+      const imageAttachment = (attachments || []).find((attachment) => attachment.type === "image");
+      return imageAttachment?.url || imageAttachment?.thumbnailUrl || imageUrl || null;
+    }
+
+    function scoreCandidate(candidate) {
+      let score = 0;
+
+      if (candidate.postUrl) {
+        score += 1000;
+      }
+
+      if (candidate.publishedAt) {
+        score += 500;
+      }
+
+      if (candidate.textFromSelector) {
+        score += 250;
+      }
+
+      score += Math.min(normalizeWhitespace(candidate.text || "").length, 500);
+      score += (candidate.attachments?.length || 0) * 50;
+
+      if (candidate.imageUrl) {
+        score += 25;
+      }
+
+      return score;
+    }
+
+    function isLowSignalMediaCandidate(candidate) {
+      const textLength = normalizeWhitespace(candidate.text || "").length;
+      const hasOnlyImages =
+        candidate.attachments.length > 0 &&
+        candidate.attachments.every((attachment) => attachment.type === "image");
+
+      return (
+        !candidate.textFromSelector &&
+        !candidate.postUrl &&
+        !candidate.publishedAt &&
+        hasOnlyImages &&
+        candidate.attachments.length > 0 &&
+        textLength < MAX_TEXT_LENGTH
+      );
+    }
+
+    function buildCandidateKey(candidate) {
+      if (candidate.postUrl) {
+        return `url:${candidate.postUrl}`;
+      }
+
+      const text = normalizeWhitespace(candidate.text || "")
+        .replace(/\n+/g, "\n")
+        .replace(/\s*…more$/i, "")
+        .trim();
+
+      if (text.length >= 80) {
+        return `text:${text.slice(0, 1200)}`;
+      }
+
+      const attachmentKey = candidate.attachments
+        .map((attachment) => `${attachment.type}|${attachment.url || ""}|${attachment.thumbnailUrl || ""}`)
+        .join(",");
+
+      return attachmentKey ? `attachment:${attachmentKey}` : null;
+    }
+
+    function mergeCandidatePair(left, right) {
+      const leftScore = scoreCandidate(left);
+      const rightScore = scoreCandidate(right);
+      const primary = leftScore >= rightScore ? left : right;
+      const secondary = primary === left ? right : left;
+      const mergedText = pickPreferredText(
+        {
+          value: primary.text,
+          fromSelector: primary.textFromSelector
+        },
+        {
+          value: secondary.text,
+          fromSelector: secondary.textFromSelector
+        }
+      );
+      const attachments = dedupeAttachments([
+        ...(left.attachments || []),
+        ...(right.attachments || [])
+      ]);
+
+      return {
+        text: mergedText.value,
+        textFromSelector: mergedText.fromSelector,
+        postUrl: primary.postUrl || secondary.postUrl || null,
+        publishedAt: primary.publishedAt || secondary.publishedAt || null,
+        attachments,
+        imageUrl: choosePrimaryImageUrl(primary.imageUrl || secondary.imageUrl || null, attachments),
+        sortIndex: Math.min(left.sortIndex, right.sortIndex)
+      };
+    }
+
     const containerSet = new Set();
 
     for (const selector of selectorCandidates) {
@@ -502,19 +761,40 @@ async function extractRawPosts(page, config) {
       })
       .slice(0, candidateLimit);
 
-    return orderedContainers.map((container) => {
-      const postUrl = extractPostUrl(container);
+    const candidateMap = new Map();
+    const postUrlByActivityId = buildPostUrlIndex();
+
+    orderedContainers.forEach((container, index) => {
+      const extractedText = extractText(container);
+      const postUrl = extractPostUrl(container, postUrlByActivityId);
+      const publishedAt = extractTimestamp(container);
       const attachments = extractAttachments(container, postUrl);
       const firstImageAttachment = attachments.find((attachment) => attachment.type === "image");
-
-      return {
-        text: extractText(container),
+      const candidate = {
+        text: extractedText.value,
+        textFromSelector: extractedText.fromSelector,
         postUrl,
-        publishedAt: extractTimestamp(container),
+        publishedAt,
         imageUrl: firstImageAttachment?.url || extractImageUrl(container),
-        attachments
+        attachments,
+        sortIndex: index
       };
+
+      if (isLowSignalMediaCandidate(candidate)) {
+        return;
+      }
+
+      const candidateKey = buildCandidateKey(candidate) || `index:${index}`;
+      const existing = candidateMap.get(candidateKey);
+      candidateMap.set(
+        candidateKey,
+        existing ? mergeCandidatePair(existing, candidate) : candidate
+      );
     });
+
+    return Array.from(candidateMap.values())
+      .sort((left, right) => left.sortIndex - right.sortIndex)
+      .map(({ textFromSelector, sortIndex, ...candidate }) => candidate);
   }, { candidateLimit: config.scrapeCandidateLimit });
 }
 

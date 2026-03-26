@@ -8,6 +8,8 @@ const EMPTY_STATE = {
   items: []
 };
 const SUPPORTED_ATTACHMENT_TYPES = new Set(["image", "video", "document"]);
+const FALLBACK_DUPLICATE_WINDOW_MS = 48 * 60 * 60 * 1000;
+const MEDIA_COLLISION_WINDOW_MS = 6 * 60 * 60 * 1000;
 
 function normalizeText(value) {
   if (!value) {
@@ -155,7 +157,7 @@ function sanitizeItem(item) {
     guid: item.guid.trim(),
     title: pickPreferredString(item.title, null) || "LinkedIn post",
     description: pickPreferredString(item.description, null) || "",
-    link: normalizeUrl(item.link) || normalizeUrl(item.postUrl) || null,
+    link: normalizeUrl(item.postUrl) || normalizeUrl(item.link) || null,
     postUrl: normalizeUrl(item.postUrl),
     imageUrl: pickPrimaryImageUrl(item.imageUrl, attachments),
     attachments,
@@ -219,7 +221,7 @@ function mergeTwoItems(existing, incoming) {
     guid: existingItem.guid,
     title: pickPreferredString(incomingItem.title, existingItem.title) || "LinkedIn post",
     description: pickPreferredString(incomingItem.description, existingItem.description) || "",
-    link: incomingItem.link || existingItem.link || incomingItem.postUrl || existingItem.postUrl,
+    link: incomingItem.postUrl || existingItem.postUrl || incomingItem.link || existingItem.link,
     postUrl: incomingItem.postUrl || existingItem.postUrl,
     imageUrl: pickPrimaryImageUrl(incomingItem.imageUrl || existingItem.imageUrl, attachments),
     attachments,
@@ -255,6 +257,141 @@ function compareItemsNewestFirst(left, right) {
   return left.guid.localeCompare(right.guid);
 }
 
+function buildContentKey(item) {
+  const description = normalizeText(item.description || item.title || "");
+
+  if (description.length < 80) {
+    return null;
+  }
+
+  return [
+    normalizeUrl(item.sourceUrl) || "",
+    description.replace(/\n+/g, "\n").replace(/\s*…more$/i, "").trim()
+  ].join("\n");
+}
+
+function extractImageUrls(item) {
+  const urls = new Set();
+
+  if (normalizeUrl(item.imageUrl, { preserveSearch: true })) {
+    urls.add(normalizeUrl(item.imageUrl, { preserveSearch: true }));
+  }
+
+  for (const attachment of item.attachments || []) {
+    if (attachment.type !== "image") {
+      continue;
+    }
+
+    const imageUrl = normalizeUrl(attachment.url, { preserveSearch: true });
+    const thumbnailUrl = normalizeUrl(attachment.thumbnailUrl, { preserveSearch: true });
+
+    if (imageUrl) {
+      urls.add(imageUrl);
+    }
+
+    if (thumbnailUrl) {
+      urls.add(thumbnailUrl);
+    }
+  }
+
+  return urls;
+}
+
+function hasSharedImage(left, right) {
+  const leftImages = extractImageUrls(left);
+  const rightImages = extractImageUrls(right);
+
+  if (leftImages.size === 0 || rightImages.size === 0) {
+    return false;
+  }
+
+  for (const imageUrl of leftImages) {
+    if (rightImages.has(imageUrl)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function isLowConfidenceMediaItem(item) {
+  const link = normalizeUrl(item.link);
+  const sourceUrl = normalizeUrl(item.sourceUrl);
+  const attachmentTypes = new Set((item.attachments || []).map((attachment) => attachment.type));
+
+  return (
+    !normalizeUrl(item.postUrl) &&
+    Boolean(link) &&
+    Boolean(sourceUrl) &&
+    link === sourceUrl &&
+    item.usedFallbackDate === true &&
+    attachmentTypes.size === 1 &&
+    attachmentTypes.has("image")
+  );
+}
+
+function isWithinWindow(left, right, windowMs) {
+  const leftTime = new Date(left.firstSeenAt || left.publishedAt).getTime();
+  const rightTime = new Date(right.firstSeenAt || right.publishedAt).getTime();
+
+  return Number.isFinite(leftTime) && Number.isFinite(rightTime) && Math.abs(leftTime - rightTime) <= windowMs;
+}
+
+function areLikelyDuplicateItems(left, right) {
+  const leftPostUrl = normalizeUrl(left.postUrl);
+  const rightPostUrl = normalizeUrl(right.postUrl);
+
+  if (leftPostUrl && rightPostUrl && leftPostUrl === rightPostUrl) {
+    return true;
+  }
+
+  const leftContentKey = buildContentKey(left);
+  const rightContentKey = buildContentKey(right);
+
+  if (
+    leftContentKey &&
+    leftContentKey === rightContentKey &&
+    left.usedFallbackDate === true &&
+    right.usedFallbackDate === true &&
+    isWithinWindow(left, right, FALLBACK_DUPLICATE_WINDOW_MS)
+  ) {
+    return true;
+  }
+
+  return (
+    isWithinWindow(left, right, MEDIA_COLLISION_WINDOW_MS) &&
+    hasSharedImage(left, right) &&
+    (isLowConfidenceMediaItem(left) || isLowConfidenceMediaItem(right))
+  );
+}
+
+function collapseLikelyDuplicates(items) {
+  let currentItems = [...items].sort(compareItemsNewestFirst);
+
+  while (true) {
+    const collapsed = [];
+
+    for (const item of currentItems) {
+      const existingIndex = collapsed.findIndex((candidate) => areLikelyDuplicateItems(candidate, item));
+
+      if (existingIndex === -1) {
+        collapsed.push(item);
+        continue;
+      }
+
+      collapsed[existingIndex] = mergeTwoItems(collapsed[existingIndex], item);
+    }
+
+    const nextItems = collapsed.sort(compareItemsNewestFirst);
+
+    if (nextItems.length === currentItems.length) {
+      return nextItems;
+    }
+
+    currentItems = nextItems;
+  }
+}
+
 function mergeFeedItems(previousItems, incomingItems, maxItems) {
   const itemMap = new Map();
 
@@ -277,7 +414,7 @@ function mergeFeedItems(previousItems, incomingItems, maxItems) {
     itemMap.set(sanitizedIncoming.guid, mergeTwoItems(existing, sanitizedIncoming));
   }
 
-  return Array.from(itemMap.values()).sort(compareItemsNewestFirst).slice(0, maxItems);
+  return collapseLikelyDuplicates(Array.from(itemMap.values())).slice(0, maxItems);
 }
 
 async function loadState(filePath) {

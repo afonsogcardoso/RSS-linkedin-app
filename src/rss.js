@@ -104,10 +104,10 @@ function buildRssXml({ title, link, description, items, generatedAt }) {
 
   const itemsXml = items
     .map((item) => {
-      const guid = item.guid || item.link;
+      const guid = item.guid || item.postUrl || item.link;
       const isPermaLink = /^https?:\/\//i.test(guid);
       const itemTitle = escapeXml(item.title || "LinkedIn post");
-      const itemLink = escapeXml(item.link || link);
+      const itemLink = escapeXml(item.postUrl || item.link || link);
       const itemGuid = escapeXml(guid);
       const itemPubDate = new Date(item.publishedAt || generatedAt || Date.now()).toUTCString();
       const itemDescription = wrapCdata(buildItemDescription(item));
