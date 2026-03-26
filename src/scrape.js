@@ -96,8 +96,10 @@ async function extractRawPosts(page, config) {
     const MAX_TEXT_LENGTH = 4000;
     const POST_URL_PATTERN = /linkedin\.com\/.*(\/posts\/|\/feed\/update\/urn:li:activity:)/i;
     const DOCUMENT_URL_PATTERN = /\.(pdf|pptx?|docx?|xlsx?)(?:$|[?#])/i;
+    const LINKEDIN_DOCUMENT_URL_PATTERN = /linkedin\.com\/.*document/i;
     const DOCUMENT_HINT_PATTERN =
       /\b(pdf|document|deck|slides|presentation|whitepaper|brochure|guide|one-pager|ebook|case study)\b/i;
+    const DOCUMENT_PAGE_HINT_PATTERN = /\b\d+\s+pages?\b/i;
     const selectorCandidates = [
       "div[data-id^='urn:li:activity:']",
       "div[data-urn^='urn:li:activity:']",
@@ -185,6 +187,18 @@ async function extractRawPosts(page, config) {
       return Array.from(new Set(matches))
         .map((match) => cleanUrl(match))
         .filter((match) => match && looksLikePostUrl(match));
+    }
+
+    function extractDirectDocumentUrls(value) {
+      const decoded = decodeEmbeddedMarkup(value);
+      const matches = [
+        ...(decoded.match(/https?:\/\/[^"'\\\s<]+?\.(?:pdf|pptx?|docx?|xlsx?)(?:[?#][^"'\\\s<]*)?/gi) || []),
+        ...(decoded.match(/https:\/\/www\.linkedin\.com\/[^"'\\\s<]*document[^"'\\\s<]*/gi) || [])
+      ];
+
+      return Array.from(new Set(matches))
+        .map((match) => cleanUrl(match, { preserveSearch: true }))
+        .filter(Boolean);
     }
 
     function cleanUrl(value, options = {}) {
@@ -430,6 +444,18 @@ async function extractRawPosts(page, config) {
       return null;
     }
 
+    function isDecorativeImageAsset(src, alt) {
+      const fingerprint = `${src || ""} ${alt || ""}`;
+
+      if (/static\.licdn\.com\/aero-v1\/sc\//i.test(src || "")) {
+        return true;
+      }
+
+      return /avatar|profile|logo|ghost|emoji|icon|reaction|like|comment|repost|send|share/i.test(
+        fingerprint
+      );
+    }
+
     function extractImageUrl(container) {
       const candidates = Array.from(container.querySelectorAll("img"))
         .map((image) => {
@@ -448,7 +474,7 @@ async function extractRawPosts(page, config) {
             return false;
           }
 
-          return !/avatar|profile|logo|ghost|emoji|icon/i.test(`${src} ${alt}`);
+          return !isDecorativeImageAsset(src, alt);
         })
         .sort((left, right) => right.score - left.score);
 
@@ -475,6 +501,56 @@ async function extractRawPosts(page, config) {
       return fallback;
     }
 
+    function collectNodeDocumentSignals(node) {
+      if (!(node instanceof HTMLElement)) {
+        return {
+          text: "",
+          title: null,
+          hasHint: false,
+          hasPageHint: false
+        };
+      }
+
+      const values = [
+        node.getAttribute("aria-label"),
+        node.getAttribute("title"),
+        node.textContent
+      ];
+      const combinedText = normalizeWhitespace(values.filter(Boolean).join("\n"));
+
+      return {
+        text: combinedText,
+        title: pickAttachmentTitle(values, null),
+        hasHint: DOCUMENT_HINT_PATTERN.test(combinedText),
+        hasPageHint: DOCUMENT_PAGE_HINT_PATTERN.test(combinedText)
+      };
+    }
+
+    function collectPreviewImages(node) {
+      if (!(node instanceof HTMLElement)) {
+        return [];
+      }
+
+      return Array.from(node.querySelectorAll("img"))
+        .map((image) => {
+          const url = cleanUrl(image.currentSrc || image.getAttribute("src"), {
+            preserveSearch: true
+          });
+          const alt = normalizeWhitespace(image.getAttribute("alt") || "");
+          const width = image.naturalWidth || image.width || image.clientWidth || 0;
+          const height = image.naturalHeight || image.height || image.clientHeight || 0;
+          const score = width * height;
+
+          return {
+            url,
+            alt,
+            score
+          };
+        })
+        .filter(({ url, alt }) => url && !isDecorativeImageAsset(url, alt))
+        .sort((left, right) => right.score - left.score);
+    }
+
     function collectImageAttachments(container) {
       return Array.from(container.querySelectorAll("img"))
         .map((image) => {
@@ -499,7 +575,7 @@ async function extractRawPosts(page, config) {
             return false;
           }
 
-          return !/avatar|profile|logo|ghost|emoji|icon/i.test(`${url} ${title || ""}`);
+          return !isDecorativeImageAsset(url, title || "");
         })
         .sort((left, right) => right.score - left.score);
     }
@@ -554,44 +630,68 @@ async function extractRawPosts(page, config) {
         .filter(Boolean);
     }
 
-    function collectDocumentAttachments(container) {
-      return Array.from(container.querySelectorAll("a[href]"))
-        .map((link) => {
-          const url = cleanUrl(link.getAttribute("href") || link.href, {
-            preserveSearch: true
-          });
+    function collectDocumentAttachments(container, postUrl) {
+      const htmlDocumentUrls = extractDirectDocumentUrls(container.innerHTML || "").map((url) => ({
+        type: "document",
+        url,
+        thumbnailUrl: null,
+        title: "LinkedIn document attachment",
+        score: 10
+      }));
 
-          if (!url || looksLikePostUrl(url)) {
+      const domDocumentAttachments = Array.from(
+        container.querySelectorAll("a[href], button, [role='button'], [aria-label], [title]")
+      )
+        .map((node) => {
+          if (!(node instanceof HTMLElement)) {
             return null;
           }
 
-          const title = pickAttachmentTitle(
-            [
-              link.getAttribute("aria-label"),
-              link.getAttribute("title"),
-              link.textContent
-            ],
-            null
-          );
-          const combined = `${url} ${title || ""}`;
+          const rawUrl =
+            node instanceof HTMLAnchorElement
+              ? cleanUrl(node.getAttribute("href") || node.href, {
+                  preserveSearch: true
+                })
+              : null;
+          const signals = collectNodeDocumentSignals(node);
+          const previewImages = collectPreviewImages(node);
+          const previewUrl = previewImages[0]?.url || null;
+          const hasDocumentUrl =
+            DOCUMENT_URL_PATTERN.test(rawUrl || "") || LINKEDIN_DOCUMENT_URL_PATTERN.test(rawUrl || "");
+          const pointsToPost = looksLikePostUrl(rawUrl || "");
+          const isLikelyDocument =
+            hasDocumentUrl ||
+            (signals.hasHint && (signals.hasPageHint || Boolean(previewUrl) || signals.text.length <= 220));
 
-          if (
-            !DOCUMENT_URL_PATTERN.test(url) &&
-            !/linkedin\.com\/.*document/i.test(url) &&
-            !DOCUMENT_HINT_PATTERN.test(combined)
-          ) {
+          if (!isLikelyDocument) {
+            return null;
+          }
+
+          if (!hasDocumentUrl && !signals.hasHint && !signals.hasPageHint) {
+            return null;
+          }
+
+          if (!hasDocumentUrl && !previewUrl && !pointsToPost) {
+            return null;
+          }
+
+          const url = rawUrl || postUrl || null;
+
+          if (!url && !previewUrl) {
             return null;
           }
 
           return {
             type: "document",
             url,
-            thumbnailUrl: null,
-            title: title || "LinkedIn document attachment",
-            score: 0
+            thumbnailUrl: previewUrl,
+            title: signals.title || "LinkedIn document attachment",
+            score: previewImages[0]?.score || (hasDocumentUrl ? 5 : 0)
           };
         })
         .filter(Boolean);
+
+      return dedupeAttachments([...htmlDocumentUrls, ...domDocumentAttachments]);
     }
 
     function dedupeAttachments(attachments) {
@@ -620,14 +720,18 @@ async function extractRawPosts(page, config) {
     }
 
     function extractAttachments(container, postUrl) {
+      const documentAttachments = collectDocumentAttachments(container, postUrl);
+      const documentPreviewUrls = new Set(
+        documentAttachments.map((attachment) => attachment.thumbnailUrl).filter(Boolean)
+      );
       const videoAttachments = collectVideoAttachments(container, postUrl);
       const videoThumbnailUrls = new Set(
         videoAttachments.map((attachment) => attachment.thumbnailUrl).filter(Boolean)
       );
       const imageAttachments = collectImageAttachments(container).filter(
-        (attachment) => !videoThumbnailUrls.has(attachment.url)
+        (attachment) =>
+          !videoThumbnailUrls.has(attachment.url) && !documentPreviewUrls.has(attachment.url)
       );
-      const documentAttachments = collectDocumentAttachments(container);
 
       return dedupeAttachments([
         ...imageAttachments,
