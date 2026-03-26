@@ -70,6 +70,17 @@ export function PostCard({ post }: PostCardProps) {
             </div>
 
             <div className="space-y-3">
+              {post.authorName ? (
+                <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                  <span>By {post.authorName}</span>
+                  {post.sharedByAuthorName ? (
+                    <>
+                      <span className="h-1 w-1 rounded-full bg-border" />
+                      <span>Reposted by {post.sharedByAuthorName}</span>
+                    </>
+                  ) : null}
+                </div>
+              ) : null}
               <Link href={`/posts/${post.id}`} className="group block">
                 <h2 className="font-[family-name:var(--font-display)] text-2xl leading-tight text-balance transition-colors group-hover:text-primary sm:text-[2rem]">
                   {post.title}

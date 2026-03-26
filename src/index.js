@@ -39,6 +39,10 @@ function buildNormalizedItem(rawItem, config, scrapedAt, sortRank) {
     imageAttachment?.url ||
     null;
   const exactPublishedAt = normalizeDate(rawItem.publishedAt);
+  const authorName = normalizeText(rawItem.authorName) || config.companyName;
+  const authorUrl = normalizeUrl(rawItem.authorUrl);
+  const sharedByAuthorName = normalizeText(rawItem.sharedByAuthorName);
+  const sharedByAuthorUrl = normalizeUrl(rawItem.sharedByAuthorUrl);
 
   if (!text && !postUrl && !imageUrl && attachments.length === 0) {
     return null;
@@ -57,6 +61,10 @@ function buildNormalizedItem(rawItem, config, scrapedAt, sortRank) {
     postUrl,
     imageUrl,
     attachments,
+    authorName,
+    authorUrl,
+    sharedByAuthorName,
+    sharedByAuthorUrl,
     publishedAt: exactPublishedAt || scrapedAt,
     usedFallbackDate: !exactPublishedAt,
     sourceUrl: config.linkedinCompanyUrl,

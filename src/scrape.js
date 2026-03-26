@@ -97,6 +97,7 @@ async function extractRawPosts(page, config) {
     const POST_URL_PATTERN = /linkedin\.com\/.*(\/posts\/|\/feed\/update\/urn:li:activity:)/i;
     const DOCUMENT_URL_PATTERN = /\.(pdf|pptx?|docx?|xlsx?)(?:$|[?#])/i;
     const LINKEDIN_DOCUMENT_URL_PATTERN = /linkedin\.com\/.*document/i;
+    const AUTHOR_PROFILE_URL_PATTERN = /linkedin\.com\/(?:company|in|school|showcase)\//i;
     const DOCUMENT_HINT_PATTERN =
       /\b(pdf|document|deck|slides|presentation|whitepaper|brochure|guide|one-pager|ebook|case study)\b/i;
     const DOCUMENT_PAGE_HINT_PATTERN = /\b\d+\s+pages?\b/i;
@@ -220,6 +221,63 @@ async function extractRawPosts(page, config) {
       }
     }
 
+    function titleCaseFromSlug(value) {
+      return String(value || "")
+        .split("-")
+        .filter(Boolean)
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(" ");
+    }
+
+    function sanitizeAuthorName(value) {
+      const normalized = normalizeWhitespace(value || "")
+        .replace(/^[\s\-–—•·|:]+/, "")
+        .replace(/[\s\-–—•·|:]+$/, "");
+
+      if (!normalized || normalized.length < 2 || normalized.length > 120) {
+        return null;
+      }
+
+      if (/^https?:\/\//i.test(normalized) || /\blinkedin\.com\b/i.test(normalized)) {
+        return null;
+      }
+
+      if (
+        isMetadataLine(normalized) ||
+        /^(follow|more|send|share|copy link|view profile|see translation|view translation|learn more)$/i.test(
+          normalized
+        )
+      ) {
+        return null;
+      }
+
+      return normalized;
+    }
+
+    function looksLikeAuthorProfileUrl(value) {
+      return AUTHOR_PROFILE_URL_PATTERN.test(String(value || ""));
+    }
+
+    function inferAuthorNameFromUrl(url) {
+      if (!looksLikeAuthorProfileUrl(url)) {
+        return null;
+      }
+
+      try {
+        const parsed = new URL(url);
+        const [, entityType, slug] =
+          parsed.pathname.match(/^\/(company|in|school|showcase)\/([^/?#]+)/i) || [];
+
+        if (!entityType || !slug) {
+          return null;
+        }
+
+        return sanitizeAuthorName(titleCaseFromSlug(slug));
+      } catch (error) {
+        return null;
+      }
+    }
+
     function isMetadataLine(value) {
       const line = normalizeWhitespace(value);
 
@@ -304,6 +362,101 @@ async function extractRawPosts(page, config) {
       return {
         value: normalizeWhitespace(filtered.join("\n")).slice(0, MAX_TEXT_LENGTH),
         fromSelector: false
+      };
+    }
+
+    function collectAuthorCandidates(container) {
+      const containerTop = container.getBoundingClientRect().top + window.scrollY;
+      const candidates = [];
+      const seen = new Set();
+
+      for (const node of container.querySelectorAll("a[href]")) {
+        if (!(node instanceof HTMLAnchorElement)) {
+          continue;
+        }
+
+        const url = cleanUrl(node.getAttribute("href") || node.href);
+
+        if (
+          !url ||
+          !looksLikeAuthorProfileUrl(url) ||
+          looksLikePostUrl(url) ||
+          LINKEDIN_DOCUMENT_URL_PATTERN.test(url)
+        ) {
+          continue;
+        }
+
+        const values = [
+          node.getAttribute("aria-label"),
+          node.getAttribute("title"),
+          node.textContent,
+          node.querySelector("img")?.getAttribute("alt")
+        ];
+        const name =
+          values.map((value) => sanitizeAuthorName(value)).find(Boolean) ||
+          inferAuthorNameFromUrl(url);
+
+        if (!name) {
+          continue;
+        }
+
+        const topOffset = node.getBoundingClientRect().top + window.scrollY - containerTop;
+
+        if (topOffset < -40 || topOffset > 900) {
+          continue;
+        }
+
+        const key = `${url}|${name.toLowerCase()}`;
+
+        if (seen.has(key)) {
+          continue;
+        }
+
+        seen.add(key);
+        candidates.push({
+          name,
+          url,
+          topOffset,
+          score:
+            (topOffset <= 240 ? 180 : Math.max(0, 120 - Math.floor(topOffset / 6))) +
+            (node.querySelector("img") ? 25 : 0)
+        });
+      }
+
+      return candidates.sort((left, right) => right.score - left.score || left.topOffset - right.topOffset);
+    }
+
+    function extractAuthorMetadata(container) {
+      const authorCandidates = collectAuthorCandidates(container);
+      const primaryAuthor = authorCandidates[0] || null;
+      const repostSignal =
+        /\brepost(?:ed|ing)?\b|\breshared\b|\bshared post\b/i.test(container.innerText || "") ||
+        Boolean(container.querySelector("[aria-label*='repost' i], [title*='repost' i]"));
+      const descendantUrns = Array.from(
+        container.querySelectorAll("[data-id^='urn:li:activity:'], [data-urn^='urn:li:activity:']")
+      )
+        .map((node) =>
+          node instanceof HTMLElement
+            ? normalizeWhitespace(node.getAttribute("data-id") || node.getAttribute("data-urn") || "")
+            : ""
+        )
+        .filter((value) => /^urn:li:activity:\d+$/i.test(value));
+      const hasNestedActivity = new Set(descendantUrns).size > 1;
+      const repostedFromAuthor = (repostSignal || hasNestedActivity)
+        ? authorCandidates.find(
+            (candidate) =>
+              primaryAuthor &&
+              candidate.name !== primaryAuthor.name &&
+              candidate.url !== primaryAuthor.url &&
+              candidate.topOffset >= primaryAuthor.topOffset
+          ) || null
+        : null;
+
+      return {
+        authorName: repostedFromAuthor?.name || primaryAuthor?.name || null,
+        authorUrl: repostedFromAuthor?.url || primaryAuthor?.url || null,
+        sharedByAuthorName: repostedFromAuthor ? primaryAuthor?.name || null : null,
+        sharedByAuthorUrl: repostedFromAuthor ? primaryAuthor?.url || null : null
       };
     }
 
@@ -867,6 +1020,10 @@ async function extractRawPosts(page, config) {
         textFromSelector: mergedText.fromSelector,
         postUrl: primary.postUrl || secondary.postUrl || null,
         publishedAt: primary.publishedAt || secondary.publishedAt || null,
+        authorName: primary.authorName || secondary.authorName || null,
+        authorUrl: primary.authorUrl || secondary.authorUrl || null,
+        sharedByAuthorName: primary.sharedByAuthorName || secondary.sharedByAuthorName || null,
+        sharedByAuthorUrl: primary.sharedByAuthorUrl || secondary.sharedByAuthorUrl || null,
         attachments,
         imageUrl: choosePrimaryImageUrl(primary.imageUrl || secondary.imageUrl || null, attachments),
         sortIndex: Math.min(left.sortIndex, right.sortIndex)
@@ -907,6 +1064,7 @@ async function extractRawPosts(page, config) {
       const extractedText = extractText(container);
       const postUrl = extractPostUrl(container, postUrlByActivityId);
       const publishedAt = extractTimestamp(container);
+      const authorMetadata = extractAuthorMetadata(container);
       const attachments = extractAttachments(container, postUrl);
       const firstImageAttachment = attachments.find((attachment) => attachment.type === "image");
       const candidate = {
@@ -914,6 +1072,10 @@ async function extractRawPosts(page, config) {
         textFromSelector: extractedText.fromSelector,
         postUrl,
         publishedAt,
+        authorName: authorMetadata.authorName,
+        authorUrl: authorMetadata.authorUrl,
+        sharedByAuthorName: authorMetadata.sharedByAuthorName,
+        sharedByAuthorUrl: authorMetadata.sharedByAuthorUrl,
         imageUrl: firstImageAttachment?.url || extractImageUrl(container),
         attachments,
         sortIndex: index

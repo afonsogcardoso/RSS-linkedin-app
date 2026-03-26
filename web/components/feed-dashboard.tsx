@@ -45,7 +45,9 @@ export function FeedDashboard({ feed }: FeedDashboardProps) {
   if (normalizedQuery) {
     visiblePosts = visiblePosts.filter((post) => {
       const haystack =
-        `${post.title} ${post.description} ${post.content}`.toLowerCase();
+        `${post.title} ${post.description} ${post.content} ${post.authorName || ""} ${
+          post.sharedByAuthorName || ""
+        }`.toLowerCase();
       return haystack.includes(normalizedQuery);
     });
   }

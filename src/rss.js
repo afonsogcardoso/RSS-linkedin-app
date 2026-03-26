@@ -46,6 +46,26 @@ function buildItemDescription(item) {
           ]
         : [];
 
+  const metadataAttributes = [
+    'data-linkedin-post-meta="true"',
+    item.authorName
+      ? `data-linkedin-author-name="${escapeXml(item.authorName)}"`
+      : "",
+    item.authorUrl
+      ? `data-linkedin-author-url="${escapeXml(item.authorUrl)}"`
+      : "",
+    item.sharedByAuthorName
+      ? `data-linkedin-shared-by-author-name="${escapeXml(item.sharedByAuthorName)}"`
+      : "",
+    item.sharedByAuthorUrl
+      ? `data-linkedin-shared-by-author-url="${escapeXml(item.sharedByAuthorUrl)}"`
+      : ""
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  fragments.push(`<div ${metadataAttributes}></div>`);
+
   if (item.description) {
     fragments.push(
       `<p>${escapeXml(item.description).replace(/\n/g, "<br/>")}</p>`

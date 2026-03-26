@@ -48,6 +48,10 @@ export type NormalizedPost = {
   content: string;
   link: string;
   pubDate: string;
+  authorName: string | null;
+  authorUrl: string | null;
+  sharedByAuthorName: string | null;
+  sharedByAuthorUrl: string | null;
   imageUrl: string | null;
   attachments: NormalizedAttachment[];
   isRecent: boolean;
@@ -169,9 +173,10 @@ function normalizePost(item: ParsedFeedItem, fallbackLink: string) {
     item.summary ||
     item.contentSnippet ||
     "";
+  const metadata = extractPostMetadata(rawHtml);
   const attachments = extractAttachments(item, rawHtml);
   const content = stripHtml(
-    stripAttachmentFigures(rawHtml)
+    stripAttachmentFigures(stripPostMetadata(rawHtml))
       .replace(/<p>\s*<img[^>]*><\/p>/gi, "")
       .replace(
         /<p>\s*<em>LinkedIn did not expose a reliable publication timestamp[\s\S]*?<\/em>\s*<\/p>/gi,
@@ -203,6 +208,10 @@ function normalizePost(item: ParsedFeedItem, fallbackLink: string) {
     content: content || title || "No post text was available in the RSS item.",
     link,
     pubDate,
+    authorName: metadata.authorName,
+    authorUrl: metadata.authorUrl,
+    sharedByAuthorName: metadata.sharedByAuthorName,
+    sharedByAuthorUrl: metadata.sharedByAuthorUrl,
     imageUrl,
     attachments,
     isRecent: Date.now() - Date.parse(pubDate) <= RECENT_WINDOW_DAYS * 24 * 60 * 60 * 1000
@@ -336,6 +345,30 @@ function extractLegacyImageUrl(item: ParsedFeedItem, rawHtml: string) {
 
   const match = rawHtml.match(/<img[^>]+src=["']([^"']+)["']/i);
   return normalizeUrl(match?.[1] || "") || null;
+}
+
+function extractPostMetadata(rawHtml: string) {
+  const metadataHtml =
+    rawHtml.match(/<div\b[^>]*data-linkedin-post-meta=["']true["'][^>]*><\/div>/i)?.[0] || "";
+
+  return {
+    authorName: normalizeTextValue(
+      decodeHtmlEntities(readHtmlAttribute(metadataHtml, "data-linkedin-author-name") || "")
+    ),
+    authorUrl: normalizeUrl(
+      decodeHtmlEntities(readHtmlAttribute(metadataHtml, "data-linkedin-author-url") || "")
+    ) || null,
+    sharedByAuthorName: normalizeTextValue(
+      decodeHtmlEntities(readHtmlAttribute(metadataHtml, "data-linkedin-shared-by-author-name") || "")
+    ),
+    sharedByAuthorUrl: normalizeUrl(
+      decodeHtmlEntities(readHtmlAttribute(metadataHtml, "data-linkedin-shared-by-author-url") || "")
+    ) || null
+  };
+}
+
+function stripPostMetadata(rawHtml: string) {
+  return rawHtml.replace(/<div\b[^>]*data-linkedin-post-meta=["']true["'][^>]*><\/div>/gi, "");
 }
 
 function stripAttachmentFigures(rawHtml: string) {

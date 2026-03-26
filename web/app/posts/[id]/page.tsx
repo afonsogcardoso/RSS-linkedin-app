@@ -124,6 +124,17 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
           <h1 className="max-w-4xl font-[family-name:var(--font-display)] text-4xl leading-tight text-balance sm:text-5xl">
             {post.title}
           </h1>
+          {post.authorName ? (
+            <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+              <span>By {post.authorName}</span>
+              {post.sharedByAuthorName ? (
+                <>
+                  <span className="h-1 w-1 rounded-full bg-border" />
+                  <span>Reposted by {post.sharedByAuthorName}</span>
+                </>
+              ) : null}
+            </div>
+          ) : null}
           <p className="max-w-2xl text-sm leading-7 text-muted-foreground sm:text-base">
             Full post view normalized from the repository RSS feed. Original feed
             delivery remains handled separately by GitHub Pages and Power Automate.
@@ -204,16 +215,26 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
                   <dd className="break-all text-foreground">{post.id}</dd>
                 </div>
                 <div className="space-y-1">
+                  <dt className="text-muted-foreground">Author</dt>
+                  <dd className="text-foreground">{post.authorName || "Unknown"}</dd>
+                </div>
+                {post.sharedByAuthorName ? (
+                  <div className="space-y-1">
+                    <dt className="text-muted-foreground">Reposted by</dt>
+                    <dd className="text-foreground">{post.sharedByAuthorName}</dd>
+                  </div>
+                ) : null}
+                <div className="space-y-1">
                   <dt className="text-muted-foreground">Published</dt>
                   <dd className="text-foreground">{formatDate(post.pubDate)}</dd>
                 </div>
                 <div className="space-y-1">
-                  <dt className="text-muted-foreground">Source feed</dt>
-                  <dd className="text-foreground">{feed.feedTitle}</dd>
-                </div>
-                <div className="space-y-1">
                   <dt className="text-muted-foreground">Attachments</dt>
                   <dd className="text-foreground">{post.attachments.length}</dd>
+                </div>
+                <div className="space-y-1">
+                  <dt className="text-muted-foreground">Source feed</dt>
+                  <dd className="text-foreground">{feed.feedTitle}</dd>
                 </div>
               </dl>
             </CardContent>
