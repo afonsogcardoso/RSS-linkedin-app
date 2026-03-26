@@ -12,7 +12,7 @@ import {
   Rss,
   Search,
   Sparkles,
-  TriangleAlert
+  TriangleAlert,
 } from "lucide-react";
 
 import type { FeedState } from "@/lib/feed";
@@ -44,7 +44,8 @@ export function FeedDashboard({ feed }: FeedDashboardProps) {
 
   if (normalizedQuery) {
     visiblePosts = visiblePosts.filter((post) => {
-      const haystack = `${post.title} ${post.description} ${post.content}`.toLowerCase();
+      const haystack =
+        `${post.title} ${post.description} ${post.content}`.toLowerCase();
       return haystack.includes(normalizedQuery);
     });
   }
@@ -75,7 +76,9 @@ export function FeedDashboard({ feed }: FeedDashboardProps) {
                 <LayoutDashboard className="h-3.5 w-3.5" />
                 LinkedIn dashboard
               </Badge>
-              <Badge variant="outline">Source of truth stays in the root RSS pipeline</Badge>
+              <Badge variant="outline">
+                Source of truth stays in the root RSS pipeline
+              </Badge>
             </div>
 
             <div className="space-y-3">
@@ -83,9 +86,10 @@ export function FeedDashboard({ feed }: FeedDashboardProps) {
                 {feed.feedTitle || "LinkedIn RSS Dashboard"}
               </h1>
               <p className="max-w-3xl text-sm leading-7 text-muted-foreground sm:text-base">
-                A separate Netlify-ready interface for reviewing LinkedIn posts from
-                the existing GitHub-hosted RSS feed. The repository feed generator,
-                GitHub Pages delivery, and Power Automate consumption stay unchanged.
+                A separate Netlify-ready interface for reviewing LinkedIn posts
+                from the existing GitHub-hosted RSS feed. The repository feed
+                generator, GitHub Pages delivery, and Power Automate consumption
+                stay unchanged.
               </p>
             </div>
 
@@ -140,7 +144,9 @@ export function FeedDashboard({ feed }: FeedDashboardProps) {
         <SummaryCard
           label="Latest post date"
           value={latestPost ? formatCompactDate(latestPost.pubDate) : "None"}
-          detail={latestPost ? formatDate(latestPost.pubDate) : "No items available"}
+          detail={
+            latestPost ? formatDate(latestPost.pubDate) : "No items available"
+          }
         />
         <SummaryCard
           label="Visible posts"
@@ -234,20 +240,28 @@ export function FeedDashboard({ feed }: FeedDashboardProps) {
             <CardContent className="space-y-4 text-sm">
               <div className="space-y-1">
                 <p className="text-muted-foreground">RSS URL</p>
-                <p className="break-all leading-6 text-foreground">
+                <a
+                  href={feed.feedUrl}
+                  className="break-all leading-6 text-foreground"
+                >
                   {feed.feedUrl || "Missing RSS_FEED_URL"}
-                </p>
+                </a>
               </div>
               <div className="space-y-1">
                 <p className="text-muted-foreground">LinkedIn source</p>
-                <p className="break-all leading-6 text-foreground">
+                <a
+                  href={feed.feedLink}
+                  className="break-all leading-6 text-foreground"
+                >
                   {feed.feedLink || "Unavailable"}
-                </p>
+                </a>
               </div>
               <div className="space-y-1">
                 <p className="text-muted-foreground">Last build date</p>
                 <p className="text-foreground">
-                  {feed.lastBuildDate ? formatDate(feed.lastBuildDate) : "Unavailable"}
+                  {feed.lastBuildDate
+                    ? formatDate(feed.lastBuildDate)
+                    : "Unavailable"}
                 </p>
               </div>
             </CardContent>
@@ -266,8 +280,8 @@ export function FeedDashboard({ feed }: FeedDashboardProps) {
                 still builds <code>public/feed.xml</code> for GitHub Pages.
               </p>
               <p>
-                Power Automate should continue using the GitHub-hosted feed URL. The
-                Netlify deployment is read-only and consumes that feed.
+                Power Automate should continue using the GitHub-hosted feed URL.
+                The Netlify deployment is read-only and consumes that feed.
               </p>
             </CardContent>
           </Card>
@@ -280,7 +294,13 @@ export function FeedDashboard({ feed }: FeedDashboardProps) {
               <CardTitle className="text-xl">Open related pages</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-3">
-              <Link href="/" className={cn(buttonVariants({ variant: "secondary" }), "justify-center")}>
+              <Link
+                href="/"
+                className={cn(
+                  buttonVariants({ variant: "secondary" }),
+                  "justify-center",
+                )}
+              >
                 Refresh dashboard state
               </Link>
               {feed.feedUrl ? (
@@ -288,7 +308,10 @@ export function FeedDashboard({ feed }: FeedDashboardProps) {
                   href={feed.feedUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className={cn(buttonVariants({ variant: "outline" }), "justify-center")}
+                  className={cn(
+                    buttonVariants({ variant: "outline" }),
+                    "justify-center",
+                  )}
                 >
                   <Rss className="h-4 w-4" />
                   Open RSS XML
@@ -299,7 +322,10 @@ export function FeedDashboard({ feed }: FeedDashboardProps) {
                   href={feed.feedLink}
                   target="_blank"
                   rel="noreferrer"
-                  className={cn(buttonVariants({ variant: "outline" }), "justify-center")}
+                  className={cn(
+                    buttonVariants({ variant: "outline" }),
+                    "justify-center",
+                  )}
                 >
                   LinkedIn company page
                   <ArrowUpRight className="h-4 w-4" />
@@ -316,7 +342,7 @@ export function FeedDashboard({ feed }: FeedDashboardProps) {
 function SummaryCard({
   label,
   value,
-  detail
+  detail,
 }: {
   label: string;
   value: string;
@@ -343,7 +369,7 @@ function FilterPill({
   active,
   icon: Icon,
   label,
-  onClick
+  onClick,
 }: {
   active: boolean;
   icon?: ComponentType<{ className?: string }>;
@@ -358,7 +384,7 @@ function FilterPill({
         "inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition",
         active
           ? "border-primary/30 bg-primary text-primary-foreground shadow-lg shadow-primary/20"
-          : "border-border/80 bg-card text-foreground hover:bg-muted"
+          : "border-border/80 bg-card text-foreground hover:bg-muted",
       )}
     >
       {Icon ? <Icon className="h-4 w-4" /> : null}
@@ -372,7 +398,7 @@ function StatusCard({
   title,
   description,
   ctaLabel,
-  ctaHref
+  ctaHref,
 }: {
   icon: ComponentType<{ className?: string }>;
   title: string;

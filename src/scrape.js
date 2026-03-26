@@ -148,6 +148,35 @@ async function extractRawPosts(page, config) {
       return match ? match[1] : null;
     }
 
+    function decodeTimestampFromActivityId(activityId) {
+      if (!/^\d+$/.test(String(activityId || ""))) {
+        return null;
+      }
+
+      try {
+        // LinkedIn activity IDs encode the publish timestamp in the high bits.
+        const timestampMs = Number(BigInt(activityId) >> 22n);
+
+        if (!Number.isFinite(timestampMs)) {
+          return null;
+        }
+
+        const parsedValue = new Date(timestampMs);
+
+        if (Number.isNaN(parsedValue.getTime())) {
+          return null;
+        }
+
+        if (parsedValue.getUTCFullYear() < 2000 || parsedValue.getUTCFullYear() > 2100) {
+          return null;
+        }
+
+        return parsedValue.toISOString();
+      } catch (error) {
+        return null;
+      }
+    }
+
     function extractDirectPostUrls(value) {
       const decoded = decodeEmbeddedMarkup(value);
       const matches =
@@ -390,6 +419,12 @@ async function extractRawPosts(page, config) {
             return parsedValue.toISOString();
           }
         }
+      }
+
+      const activityId = extractActivityId(extractActivityUrn(container) || "");
+
+      if (activityId) {
+        return decodeTimestampFromActivityId(activityId);
       }
 
       return null;

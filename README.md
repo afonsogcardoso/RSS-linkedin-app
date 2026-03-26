@@ -264,7 +264,7 @@ The repository root `netlify.toml` includes the Netlify build configuration for 
 - If a stable post URL is not available, the code derives a GUID from the post content and image URL.
 - New items are merged into the existing state file, deduped, sorted newest first, and trimmed to the latest 20 items.
 - When LinkedIn exposes guest-accessible attachment assets, the feed preserves image, video, and document metadata in the generated item description HTML and in `data/feed.json`.
-- If LinkedIn does not expose a reliable publication timestamp, the feed uses the first successful scrape time as `pubDate`.
+- The feed prefers the exact publication timestamp from the page. If LinkedIn omits that value, the scraper falls back to the timestamp encoded in the LinkedIn activity ID. Only if neither source is available does the feed use the first successful scrape time as `pubDate`.
 - If the scraper returns zero items, the build fails and keeps the previous `public/feed.xml` and `data/feed.json` unchanged.
 
 ## Limitations
